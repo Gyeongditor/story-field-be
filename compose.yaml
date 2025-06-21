@@ -1,14 +1,24 @@
+version: '3.8'
+
 services:
   mysql:
-    image: 'mysql:latest'
+    image: gyeongditor/mysql-custom:latest
+    container_name: storyfield-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    env_file:
+      - .env
+
+  app:
+    image: gyeongditor/storyfield:latest
+    container_name: storyfield-app
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
-    ports:
-      - '3306'
-  redis:
-    image: 'redis:latest'
-    ports:
-      - '6379'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/storyfield?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
