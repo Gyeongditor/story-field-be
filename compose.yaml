@@ -10,6 +10,14 @@ services:
     env_file:
       - .env
 
+  redis:
+    image: gyeongditor/storyfield-redis:latest
+    container_name: storyfield-redis
+    depends_on:
+      - mysql
+    ports:
+      - "7379:6379"
+
   app:
     image: gyeongditor/storyfield:latest
     container_name: storyfield-app
@@ -22,3 +30,5 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/storyfield?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+
+
