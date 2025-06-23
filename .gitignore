@@ -108,6 +108,7 @@ local.properties
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/vcs.xml
 
 # AWS User-specific
 .idea/**/aws.xml
@@ -344,6 +345,7 @@ $RECYCLE.BIN/
 .gradle
 **/build/
 !src/**/build/
+.env
 
 # Ignore Gradle GUI config
 gradle-app.setting
@@ -367,4 +369,6 @@ gradle-app.setting
 # Java heap dump
 *.hprof
 
+### 도커파일도 굳이 필요없을 듯 나중에 필요하면 수정하겠음###
+Dockerfile
 # End of https://www.toptal.com/developers/gitignore/api/java,gradle,visualstudiocode,intellij,eclipse,windows,macos,linux,git,netbeans
