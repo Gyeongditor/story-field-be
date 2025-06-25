@@ -1,28 +1,58 @@
-package com.gyeongditor.storyfield.Controller;
+package com.gyeongditor.storyfield.controller;
 
-import com.gyeongditor.storyfield.dto.StoryDTO.StoryCreateRequestDTO;
-import com.gyeongditor.storyfield.dto.StoryDTO.StoryResponseDTO;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.StoryDTO.StoryCreateDTO;
+import com.gyeongditor.storyfield.dto.StoryDTO.StoryPageResponseDTO;
+import com.gyeongditor.storyfield.dto.StoryDTO.StorySummaryDTO;
+import com.gyeongditor.storyfield.repository.UserRepository;
+import com.gyeongditor.storyfield.service.StoryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/stories")
-@Tag(name = "Story API", description = "동화 생성 및 조회 API")
+@RequiredArgsConstructor
 public class StoryController {
 
+    private final StoryService storyService;
+    private final UserRepository userRepository;
+
+    // 1. 동화 생성
     @PostMapping
-    @Operation(summary = "동화 생성", description = "사용자가 새 동화를 생성.")
-    public ResponseEntity<StoryResponseDTO> createStory(@RequestBody StoryCreateRequestDTO requestDTO) {
-        // 생성 로직
-        return ResponseEntity.ok(new StoryResponseDTO());
+    public ResponseEntity<String> createStory(@RequestBody StoryCreateDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        String storyId = storyService.createStory(request, user);
+        return ResponseEntity.ok(storyId);
     }
 
-    @GetMapping("/{storyId}")
-    @Operation(summary = "동화 상세 조회", description = "특정 동화의 정보를 반환.")
-    public ResponseEntity<StoryResponseDTO> getStory(@PathVariable String storyId) {
-        // 조회 로직
-        return ResponseEntity.ok(new StoryResponseDTO());
+    // 2. 전체 동화 목록 조회
+    @GetMapping
+    public ResponseEntity<List<StorySummaryDTO>> getAllStories() {
+        List<StorySummaryDTO> stories = storyService.readAllStory();
+        return ResponseEntity.ok(stories);
+    }
+
+    // 3. 특정 스토리 페이지 전체 조회
+    @GetMapping("/{storyId}/pages")
+    public ResponseEntity<List<StoryPageResponseDTO>> getStoryPages(@PathVariable String storyId) {
+        List<StoryPageResponseDTO> pages = storyService.getPagesByStoryId(storyId);
+        return ResponseEntity.ok(pages);
+    }
+
+    // 4. 동화 삭제
+    @DeleteMapping("/{storyId}")
+    public ResponseEntity<String> deleteStory(@PathVariable String storyId) {
+        String deletedId = storyService.deleteStory(storyId);
+        return ResponseEntity.ok(deletedId);
     }
 }
