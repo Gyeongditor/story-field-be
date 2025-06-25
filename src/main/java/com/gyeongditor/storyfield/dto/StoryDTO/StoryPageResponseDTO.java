@@ -1,16 +1,17 @@
 package com.gyeongditor.storyfield.dto.StoryDTO;
 
 import com.gyeongditor.storyfield.Entity.StoryPage;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@Builder
+@NoArgsConstructor
 public class StoryPageResponseDTO {
     private Integer pageNum;
     private String text;
     private String imageUrl;
     private String audioUrl;
+
 
     public static StoryPageResponseDTO fromEntity(StoryPage page) {
         StoryPageResponseDTO dto = new StoryPageResponseDTO();
