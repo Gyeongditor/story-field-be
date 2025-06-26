@@ -38,9 +38,9 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "회원가입 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<Void> signup(
-            @RequestBody UserSignupRequestDTO requestDTO
-    ) {
+    public ResponseEntity<Void> signup(@RequestBody UserSignupRequestDTO requestDTO) {
+        System.out.println("password: " + requestDTO.getUserPw());
+
         userService.signup(requestDTO);
 
         return ResponseEntity.ok().build();

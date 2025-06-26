@@ -35,12 +35,9 @@ public class StoryController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "사용자 없음")
     })
-    public ResponseEntity<String> saveStory(
-            @Parameter(description = "사용자 UUID", required = true)
+    public ResponseEntity<String> saveStory(@Parameter(description = "사용자 UUID", required = true)
             @PathVariable UUID userId,
-
-            @org.springframework.web.bind.annotation.RequestBody SaveStoryDTO dto
-    ) {
+            @RequestBody SaveStoryDTO dto) {
         String storyId = storyService.saveStory(userId, dto);
         return ResponseEntity.ok(storyId);
     }
@@ -51,10 +48,7 @@ public class StoryController {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "404", description = "스토리 없음")
     })
-    public ResponseEntity<List<StoryPageResponseDTO>> getStoryPages(
-            @Parameter(description = "스토리 UUID", required = true)
-            @PathVariable UUID storyId
-    ) {
+    public ResponseEntity<List<StoryPageResponseDTO>> getStoryPages(@Parameter(description = "스토리 UUID", required = true) @PathVariable UUID storyId) {
         List<StoryPageResponseDTO> pages = storyService.getStoryPages(storyId);
         return ResponseEntity.ok(pages);
     }
@@ -64,9 +58,7 @@ public class StoryController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공")
     })
-    public ResponseEntity<List<StoryThumbnailResponseDTO>> getMainThumbnails(
-            @RequestParam(defaultValue = "0") int page  // 0부터 시작
-    ) {
+    public ResponseEntity<List<StoryThumbnailResponseDTO>> getMainThumbnails(@RequestParam(defaultValue = "0") int page) {
         List<StoryThumbnailResponseDTO> thumbnails = storyService.getMainPageStories(page);
         return ResponseEntity.ok(thumbnails);
     }
@@ -80,10 +72,7 @@ public class StoryController {
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
             @ApiResponse(responseCode = "404", description = "스토리 없음")
     })
-    public ResponseEntity<Void> deleteStory(
-            @Parameter(description = "스토리 ID", required = true)
-            @PathVariable UUID storyId
-    ) {
+    public ResponseEntity<Void> deleteStory(@Parameter(description = "스토리 ID", required = true) @PathVariable UUID storyId) {
         storyService.deleteStory(storyId);
         return ResponseEntity.ok().build();
     }
