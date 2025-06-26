@@ -1,15 +1,14 @@
 package com.gyeongditor.storyfield.dto.Story;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "스토리 썸네일 응답 DTO")
 public class StoryThumbnailResponseDTO {
 

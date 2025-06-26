@@ -1,11 +1,15 @@
 package com.gyeongditor.storyfield.dto.Story;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "스토리 페이지 정보 DTO")
 public class StoryPageDTO {
 
