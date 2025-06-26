@@ -43,19 +43,5 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
-
-    @PostMapping("/login")
-    @Operation(summary = "로그인", description = "사용자 로그인")
-    public ResponseEntity<String> login(@RequestBody UserLoginRequestDTO requestDTO) {
-        // 로그인 로직
-        return ResponseEntity.ok("로그인 성공");
-    }
-
-    @GetMapping("/{userId}")
-    @Operation(summary = "회원 조회", description = "회원 정보를 반환.")
-    public ResponseEntity<UserResponseDTO> getUser(@PathVariable String userId) {
-        // 조회 로직
-        return ResponseEntity.ok(new UserResponseDTO());
-    }
 }
 
