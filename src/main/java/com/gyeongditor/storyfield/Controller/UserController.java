@@ -6,6 +6,7 @@ import com.gyeongditor.storyfield.dto.UserDTO.UserSignupRequestDTO;
 import com.gyeongditor.storyfield.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -18,9 +19,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "User API", description = "회원 관련 API")
+@RequiredArgsConstructor
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @PostMapping("/signup")
     @Operation(
