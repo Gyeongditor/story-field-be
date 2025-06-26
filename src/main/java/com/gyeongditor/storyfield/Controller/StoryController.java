@@ -70,4 +70,21 @@ public class StoryController {
         List<StoryThumbnailResponseDTO> thumbnails = storyService.getMainPageStories(page);
         return ResponseEntity.ok(thumbnails);
     }
+
+    @DeleteMapping("/{storyId}")
+    @Operation(
+            summary = "스토리 삭제",
+            description = "스토리 ID를 이용하여 해당 동화를 삭제합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "404", description = "스토리 없음")
+    })
+    public ResponseEntity<Void> deleteStory(
+            @Parameter(description = "스토리 ID", required = true)
+            @PathVariable UUID storyId
+    ) {
+        storyService.deleteStory(storyId);
+        return ResponseEntity.ok().build();
+    }
 }

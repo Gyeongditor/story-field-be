@@ -91,4 +91,11 @@ public class StoryService {
                 })
                 .toList();
     }
+
+    public void deleteStory(UUID storyId) {
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 스토리가 존재하지 않습니다."));
+
+        storyRepository.delete(story);
+    }
 }
