@@ -24,20 +24,24 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'        // JPA (Hibernate) 사용
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'      // Redis 일반(블로킹) 사용
+	implementation 'org.springframework.boot:spring-boot-starter-mail'             // 이메일 기능
+	implementation 'org.springframework.boot:spring-boot-starter-security'         // Spring Security
+	implementation 'org.springframework.boot:spring-boot-starter-web'              // Spring Web (MVC)
+
+	compileOnly 'org.projectlombok:lombok'                                         // 롬복 (컴파일 시만 필요)
+	annotationProcessor 'org.projectlombok:lombok'                                 // 롬복 어노테이션 프로세서
+
+	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'          // 도커 컴포즈 플러그인 (개발용)
+	runtimeOnly 'com.mysql:mysql-connector-j'                                      // MySQL JDBC 드라이버 (런타임에만 필요)
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'         // 테스트용 기본 라이브러리
+	testImplementation 'io.projectreactor:reactor-test'                            // 리액터 테스트 라이브러리 (리액티브 개발용)
+	testImplementation 'org.springframework.security:spring-security-test'         // 스프링 시큐리티 테스트
+
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'                    // JUnit 런처
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'       // Swagger UI & OpenAPI 지원
 }
 
 tasks.named('test') {
