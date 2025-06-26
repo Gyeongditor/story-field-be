@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "user")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
