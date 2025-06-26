@@ -4,6 +4,8 @@ import com.gyeongditor.storyfield.Entity.Story;
 import com.gyeongditor.storyfield.Entity.StoryPage;
 import com.gyeongditor.storyfield.Entity.User;
 import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
+import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
+import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.repository.StoryRepository;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,19 @@ public class StoryService {
         storyRepository.save(story);
 
         return story.getStoryId().toString();
+    }
+
+    public List<StoryPageResponseDTO> getStoryPages(UUID storyId) {
+        Story story = storyRepository.findById(storyId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 스토리가 존재하지 않습니다."));
+
+        return story.getPages().stream()
+                .map(page -> StoryPageResponseDTO.builder()
+                        .pageNumber(page.getPageNumber())
+                        .content(page.getContent())
+                        .imageUrl(page.getImageUrl())
+                        .build())
+                .toList();
     }
 
 }
