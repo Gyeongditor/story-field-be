@@ -6,6 +6,7 @@ import com.gyeongditor.storyfield.dto.UserDTO.UserSignupRequestDTO;
 import com.gyeongditor.storyfield.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -18,9 +19,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RestController
 @RequestMapping("/api/user")
 @Tag(name = "User API", description = "회원 관련 API")
+@RequiredArgsConstructor
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @PostMapping("/signup")
     @Operation(
@@ -36,9 +38,9 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "회원가입 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    public ResponseEntity<Void> signup(
-            @RequestBody UserSignupRequestDTO requestDTO
-    ) {
+    public ResponseEntity<Void> signup(@org.springframework.web.bind.annotation.RequestBody UserSignupRequestDTO requestDTO) {
+        System.out.println("password: " + requestDTO.getUserPw());
+
         userService.signup(requestDTO);
 
         return ResponseEntity.ok().build();
