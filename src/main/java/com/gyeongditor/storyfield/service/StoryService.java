@@ -78,7 +78,7 @@ public class StoryService {
         return storyPage.getContent().stream()
                 .map(story -> {
                     String thumbnail = story.getPages().stream()
-                            .filter(p -> p.getPageNumber() == 4)
+                            .filter(p -> p.getPageNumber() == 3)
                             .findFirst()
                             .map(StoryPage::getImageUrl)
                             .orElse(null);
