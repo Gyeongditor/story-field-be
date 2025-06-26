@@ -87,4 +87,11 @@ public class StoryController {
         storyService.deleteStory(storyId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{storyId}")
+    @Operation(summary = "동화 상세 조회", description = "특정 동화의 정보를 반환합니다.")
+    public ResponseEntity<StoryResponseDTO> getStory(@PathVariable String storyId) {
+        // 조회 로직
+        return ResponseEntity.ok(new StoryResponseDTO());
+    }
 }
