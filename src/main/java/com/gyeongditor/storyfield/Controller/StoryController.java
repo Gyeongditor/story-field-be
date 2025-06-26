@@ -20,7 +20,7 @@ public class StoryController {
     }
 
     @GetMapping("/{storyId}")
-    @Operation(summary = "동화 상세 조회", description = "특정 동화의 정보를 반환.")
+    @Operation(summary = "동화 상세 조회", description = "특정 동화의 정보를 반환r.")
     public ResponseEntity<StoryResponseDTO> getStory(@PathVariable String storyId) {
         // 조회 로직
         return ResponseEntity.ok(new StoryResponseDTO());
