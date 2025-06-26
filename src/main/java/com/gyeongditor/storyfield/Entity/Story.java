@@ -2,32 +2,33 @@ package com.gyeongditor.storyfield.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "story")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Story {
 
     @Id
-    @Column(name = "story_id", length = 36)
-    private String storyId;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID storyId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "userId")
     private User user;
 
-    @Column(name = "story_title", length = 255)
     private String storyTitle;
 
-    @Column(name = "story_created_at")
-    private LocalDateTime storyCreatedAt;
+    private LocalDateTime createdAt;
 
-    @Column(name = "story_updated_at")
-    private LocalDateTime storyUpdatedAt;
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "story", cascade= CascadeType.ALL, orphanRemoval = true)
+    private List<StoryPage> pages = new ArrayList<>();
 }
-
