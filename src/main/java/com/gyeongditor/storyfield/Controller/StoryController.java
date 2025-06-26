@@ -37,7 +37,7 @@ public class StoryController {
     })
     public ResponseEntity<String> saveStory(@Parameter(description = "사용자 UUID", required = true)
             @PathVariable UUID userId,
-            @RequestBody SaveStoryDTO dto) {
+            @org.springframework.web.bind.annotation.RequestBody SaveStoryDTO dto) {
         String storyId = storyService.saveStory(userId, dto);
         return ResponseEntity.ok(storyId);
     }
