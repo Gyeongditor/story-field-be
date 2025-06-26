@@ -63,7 +63,7 @@ public class StoryController {
         return ResponseEntity.ok(thumbnails);
     }
 
-    @DeleteMapping("/{storyId}")
+    @DeleteMapping("/{userId}/{storyId}")
     @Operation(
             summary = "스토리 삭제",
             description = "스토리 ID를 이용하여 해당 동화를 삭제합니다."
@@ -72,8 +72,8 @@ public class StoryController {
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
             @ApiResponse(responseCode = "404", description = "스토리 없음")
     })
-    public ResponseEntity<Void> deleteStory(@Parameter(description = "스토리 ID", required = true) @PathVariable UUID storyId) {
-        storyService.deleteStory(storyId);
+    public ResponseEntity<Void> deleteStory(@Parameter(description = "스토리 ID", required = true) @PathVariable UUID userId, @PathVariable UUID storyId) {
+        storyService.deleteStory(userId, storyId);
         return ResponseEntity.ok().build();
     }
 }
