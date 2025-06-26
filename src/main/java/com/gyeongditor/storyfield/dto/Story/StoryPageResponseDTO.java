@@ -3,8 +3,11 @@ package com.gyeongditor.storyfield.dto.Story;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
 @Schema(description = "스토리 페이지 응답 DTO")
 public class StoryPageResponseDTO {

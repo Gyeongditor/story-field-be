@@ -2,8 +2,11 @@ package com.gyeongditor.storyfield.dto.UserDTO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Schema(description = "회원가입 요청 DTO")
 public class UserSignupRequestDTO {
 

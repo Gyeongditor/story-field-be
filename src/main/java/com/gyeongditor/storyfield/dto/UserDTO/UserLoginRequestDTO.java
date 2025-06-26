@@ -1,8 +1,10 @@
 package com.gyeongditor.storyfield.dto.UserDTO;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class UserLoginRequestDTO {
     private String loginId;
     private String userPw;

@@ -1,9 +1,12 @@
 package com.gyeongditor.storyfield.dto.UserDTO;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 public class UserResponseDTO {
     private String userId;
     private String name;
