@@ -28,7 +28,7 @@ public class UserService {
 
         // 3. User 엔티티 생성
         User user = User.builder()
-                .userId(UUID.randomUUID().toString())
+                .userId(UUID.randomUUID())
                 .loginId(request.getLoginId())
                 .userPw(encodedPw)
                 .name(request.getName())
@@ -42,7 +42,7 @@ public class UserService {
         // 4. 저장
         userRepository.save(user);
 
-        return user.getUserId();
+        return user.getUserId().toString();
     }
 
 }
