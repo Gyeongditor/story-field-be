@@ -9,6 +9,10 @@ import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.repository.StoryRepository;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -67,4 +71,24 @@ public class StoryService {
                 .toList();
     }
 
+    public List<StoryThumbnailResponseDTO> getMainPageStories(int page) {
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Story> storyPage = storyRepository.findAll(pageable);
+
+        return storyPage.getContent().stream()
+                .map(story -> {
+                    String thumbnail = story.getPages().stream()
+                            .filter(p -> p.getPageNumber() == 4)
+                            .findFirst()
+                            .map(StoryPage::getImageUrl)
+                            .orElse(null);
+
+                    return StoryThumbnailResponseDTO.builder()
+                            .storyId(story.getStoryId())
+                            .storyTitle(story.getStoryTitle())
+                            .thumbnailUrl(thumbnail)
+                            .build();
+                })
+                .toList();
+    }
 }
