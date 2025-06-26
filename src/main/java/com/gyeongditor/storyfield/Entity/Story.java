@@ -20,7 +20,7 @@ public class Story {
     private UUID storyId;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "userId")
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
 
     private String storyTitle;
