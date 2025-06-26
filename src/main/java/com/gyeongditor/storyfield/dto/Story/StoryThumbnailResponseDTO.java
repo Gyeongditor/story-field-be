@@ -9,6 +9,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Schema(description = "스토리 썸네일 응답 DTO")
 public class StoryThumbnailResponseDTO {
 

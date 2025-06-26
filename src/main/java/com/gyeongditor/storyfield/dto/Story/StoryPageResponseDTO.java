@@ -7,6 +7,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Schema(description = "스토리 페이지 응답 DTO")
 public class StoryPageResponseDTO {
 
