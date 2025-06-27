@@ -345,8 +345,11 @@ $RECYCLE.BIN/
 .gradle
 **/build/
 !src/**/build/
+
+### Local Environment Files ###
 .env
-application-local.properties
+**/application-local.properties
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
