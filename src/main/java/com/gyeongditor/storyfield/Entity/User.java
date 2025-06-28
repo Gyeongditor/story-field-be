@@ -14,7 +14,7 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @Column(name = "user_id", length = 36)
+    @Column(name = "user_id", columnDefinition = "BINARY(16)")
     private UUID userId;
 
     @Column(name = "login_id", length = 36, nullable = false, unique = true)

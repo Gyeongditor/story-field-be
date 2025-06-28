@@ -78,7 +78,7 @@ public class StoryService {
         return storyPage.getContent().stream()
                 .map(story -> {
                     String thumbnail = story.getPages().stream()
-                            .filter(p -> p.getPageNumber() == 4)
+                            .filter(p -> p.getPageNumber() == 3)
                             .findFirst()
                             .map(StoryPage::getImageUrl)
                             .orElse(null);
@@ -92,7 +92,10 @@ public class StoryService {
                 .toList();
     }
 
-    public void deleteStory(UUID storyId) {
+    public void deleteStory(UUID userId, UUID storyId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+        // 권한 설정 추가 예정
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 스토리가 존재하지 않습니다."));
 

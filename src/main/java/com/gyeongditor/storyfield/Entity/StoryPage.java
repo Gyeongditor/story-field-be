@@ -11,6 +11,11 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_story_page_pageNumber", columnNames = {"story_id", "pageNumber"})
+        }
+)
 public class StoryPage {
 
     @Id
