@@ -159,7 +159,7 @@ jwt:
 4. 브랜치에 Push 합니다 (`git push origin feature/new-feature`)
 5. Pull Request를 생성합니다
 
-## 📝 라이선스
+## 📝 라이센스
 이 프로젝트는 비공개 프로젝트입니다.
 
 ## 👥 팀원
