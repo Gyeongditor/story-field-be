@@ -1,7 +1,8 @@
 # Story Field Backend
 
 ## 📖 프로젝트 소개
-경기도 갭이어 프로젝트 '이야기 밭' 백엔드 입니다.
+- AI기반 동화 생성 서비스 "이야기밭"의 백엔드입니다.
+- 해당 프로젝트는 "2025 경기도 갭이어 프로젝트"에 합격하여 진행중인 프로젝트이며, 사용자들의 사진이나 이야기를 받아 AI기반으로 동화를 생성하는 프로젝트입니다.
 
 ## 🛠️ 기술 스택
 - **Language**: Java 17
@@ -163,8 +164,9 @@ jwt:
 이 프로젝트는 비공개 프로젝트입니다.
 
 ## 👥 팀원
-- 백승일 (@github-SeungIlB)
-- 성연준 (@github-Mr-Sung98)
+- [백승일 (@SeungIlB)](https://github.com/SeungIlB)
+- [성연준 (@Mr-Sung98)](https://github.com/Mr-Sung98)
 
 ## 📞 문의사항
-프로젝트에 대한 문의사항이 있으시면 Issues를 통해 연락주세요.
+프로젝트에 대한 문의사항
+📧 dorucigi@gmail.com
