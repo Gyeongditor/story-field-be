@@ -1,6 +1,7 @@
 package com.gyeongditor.storyfield.service;
 
 import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.UserDTO.SignUpDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.repository.UserRepository;
@@ -8,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import seungil.login_boilerplate.dto.SignUpDTO;
+
 
 import java.util.Optional;
 import java.util.UUID;
