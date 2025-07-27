@@ -14,7 +14,8 @@ public class RedisConfig {
 
     @Bean // Lettuce를 이용해 Redis 서버에 연결
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory();
+        // 'redis'는 docker-compose 서비스 이름, 포트는 Redis 기본 6379
+        return new LettuceConnectionFactory("redis", 6379);
     }
 
     @Bean // Redis 작업을 수행하기 위한 RedisTemplate 빈을 정의
