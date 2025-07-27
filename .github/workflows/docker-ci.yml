@@ -54,8 +54,7 @@ jobs:
             --build-arg JWT_SECRET=${{ env.JWT_SECRET }} \
             --build-arg SPRING_EMAIL_USERNAME=${{ env.SPRING_EMAIL_USERNAME }} \
             --build-arg SPRING_EMAIL_PASSWORD=${{ env.SPRING_EMAIL_PASSWORD }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/storyfield:latest \
-            .
+            -t ${{ secrets.DOCKER_USERNAME }}/storyfield:latest .
 
       - name: Push Docker Image
         run: |
