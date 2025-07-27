@@ -7,8 +7,6 @@ services:
     restart: unless-stopped
     ports:
       - "4307:3306"
-    env_file:
-      - .env
 
   redis:
     image: gyeongditor/storyfield-redis:latest
@@ -27,8 +25,4 @@ services:
     ports:
       - "9080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/storyfield?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-
-
+      SPRING_PROFILES_ACTIVE: dev
