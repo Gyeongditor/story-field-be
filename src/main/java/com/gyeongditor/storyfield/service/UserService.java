@@ -2,13 +2,14 @@ package com.gyeongditor.storyfield.service;
 
 import com.gyeongditor.storyfield.Entity.User;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
+import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.repository.UserRepository;
-import com.gyeongditor.storyfield.service.MailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+import seungil.login_boilerplate.dto.SignUpDTO;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class UserService {
     private final MailService mailService;
 
 
-    public seungil.login_boilerplate.dto.UserResponseDTO signUp(seungil.login_boilerplate.dto.SignUpDTO signUpDTO) {
+    public UserResponseDTO signUp(SignUpDTO signUpDTO) {
         // 이메일 중복 체크
         if (isEmailAlreadyExists(signUpDTO.getEmail())) {
             throw new IllegalStateException("이미 등록된 이메일 입니다.");
@@ -84,7 +85,7 @@ public class UserService {
     }
 
     // 회원 정보 조회
-    public seungil.login_boilerplate.dto.UserResponseDTO getUserById(UUID userId) {
+    public UserResponseDTO getUserById(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             return new seungil.login_boilerplate.dto.UserResponseDTO(user.get().getUserId(), user.get().getEmail(), user.get().getUserName());
@@ -94,7 +95,7 @@ public class UserService {
     }
 
     // 회원 정보 수정
-    public seungil.login_boilerplate.dto.UserResponseDTO updateUser(UUID userId, UpdateUserDTO updateUserDTO) {
+    public UserResponseDTO updateUser(UUID userId, UpdateUserDTO updateUserDTO) {
         return userRepository.findById(userId).map(user -> {
             if (!user.getEmail().equals(updateUserDTO.getEmail())) {
                 verifyEmail(updateUserDTO.getEmail());

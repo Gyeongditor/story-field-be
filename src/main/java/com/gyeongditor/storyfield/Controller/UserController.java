@@ -1,6 +1,7 @@
 package com.gyeongditor.storyfield.Controller;
 
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
+import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,16 +22,16 @@ public class UserController {
 
     // 회원 가입
     @PostMapping("/signup")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO) {
-        seungil.login_boilerplate.dto.UserResponseDTO userResponseDTO = userService.signUp(signUpDTO);
+    public ResponseEntity<UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO) {
+        UserResponseDTO userResponseDTO = userService.signUp(signUpDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
     }
 
     // 회원 정보 조회
     @GetMapping("/{userId}")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> getUser(@PathVariable UUID userId) {
+    public ResponseEntity<UserResponseDTO> getUser(@PathVariable UUID userId) {
         try {
-            seungil.login_boilerplate.dto.UserResponseDTO userResponseDTO = userService.getUserById(userId);
+            UserResponseDTO userResponseDTO = userService.getUserById(userId);
             return ResponseEntity.ok(userResponseDTO);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -39,9 +40,9 @@ public class UserController {
 
     // 회원 정보 수정
     @PutMapping("/{userId}")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         try {
-            seungil.login_boilerplate.dto.UserResponseDTO updatedUser = userService.updateUser(userId, updateUserDTO);
+            UserResponseDTO updatedUser = userService.updateUser(userId, updateUserDTO);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
