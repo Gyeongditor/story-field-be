@@ -8,14 +8,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    env:
-      SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-      SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      SPRING_EMAIL_USERNAME: ${{ secrets.SPRING_EMAIL_USERNAME }}
-      SPRING_EMAIL_PASSWORD: ${{ secrets.SPRING_EMAIL_PASSWORD }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -38,25 +30,22 @@ jobs:
       - name: Check wait-for-it.sh existence
         run: ls -l wait-for-it.sh
 
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/storyfield:latest
+          build-args: |
+            SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SPRING_EMAIL_USERNAME=${{ secrets.SPRING_EMAIL_USERNAME }}
+            SPRING_EMAIL_PASSWORD=${{ secrets.SPRING_EMAIL_PASSWORD }}
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker Image
-        run: |
-          echo "Starting docker build..."
-          docker build --progress=plain \
-            --build-arg SPRING_DATASOURCE_URL=${{ env.SPRING_DATASOURCE_URL }} \
-            --build-arg SPRING_DATASOURCE_USERNAME=${{ env.SPRING_DATASOURCE_USERNAME }} \
-            --build-arg SPRING_DATASOURCE_PASSWORD=${{ env.SPRING_DATASOURCE_PASSWORD }} \
-            --build-arg JWT_SECRET=${{ env.JWT_SECRET }} \
-            --build-arg SPRING_EMAIL_USERNAME=${{ env.SPRING_EMAIL_USERNAME }} \
-            --build-arg SPRING_EMAIL_PASSWORD=${{ env.SPRING_EMAIL_PASSWORD }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/storyfield:latest .
-
-      - name: Push Docker Image
-        run: |
-          echo "Pushing docker image..."
-          docker push ${{ secrets.DOCKER_USERNAME }}/storyfield:latest
