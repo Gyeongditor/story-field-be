@@ -24,25 +24,49 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'        // JPA (Hibernate) 사용
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'      // Redis 일반(블로킹) 사용
-	implementation 'org.springframework.boot:spring-boot-starter-mail'             // 이메일 기능
-	implementation 'org.springframework.boot:spring-boot-starter-security'         // Spring Security
-	implementation 'org.springframework.boot:spring-boot-starter-web'              // Spring Web (MVC)
+	// Jakarta Servlet API (Spring Boot 3.x 필수)
+	compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 
-	compileOnly 'org.projectlombok:lombok'                                         // 롬복 (컴파일 시만 필요)
-	annotationProcessor 'org.projectlombok:lombok'                                 // 롬복 어노테이션 프로세서
+	// Spring Boot 스타터들
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'          // 도커 컴포즈 플러그인 (개발용)
-	runtimeOnly 'com.mysql:mysql-connector-j'                                      // MySQL JDBC 드라이버 (런타임에만 필요)
+	// ✅ JavaMailSender
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'         // 테스트용 기본 라이브러리
-	testImplementation 'io.projectreactor:reactor-test'                            // 리액터 테스트 라이브러리 (리액티브 개발용)
-	testImplementation 'org.springframework.security:spring-security-test'         // 스프링 시큐리티 테스트
 
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'                    // JUnit 런처
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'       // Swagger UI & OpenAPI 지원
+	// ✅ Redis (Lettuce 클라이언트 사용)
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'io.lettuce:lettuce-core:6.2.6.RELEASE' // Spring Boot 3.3.13 기준
+
+	// JWT
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// DB
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// Docker Compose (개발용)
+	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+	// Swagger UI & OpenAPI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
+	// 테스트
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'io.projectreactor:reactor-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
 
 tasks.named('test') {
 	useJUnitPlatform()
