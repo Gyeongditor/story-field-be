@@ -1,4 +1,4 @@
-package seungil.login_boilerplate.dto;
+package com.gyeongditor.storyfield.dto.UserDTO;
 
 import lombok.*;
 
@@ -10,7 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UserResponseDTO {
 
-    private UUID id;
+    private UUID userId;
     private String email;
     private String userName;
 

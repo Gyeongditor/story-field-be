@@ -1,4 +1,4 @@
-package seungil.login_boilerplate.dto;
+package com.gyeongditor.storyfield.dto.UserDTO;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

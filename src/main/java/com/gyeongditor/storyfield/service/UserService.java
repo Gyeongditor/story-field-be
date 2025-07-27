@@ -1,14 +1,16 @@
 package com.gyeongditor.storyfield.service;
 
 import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.UserDTO.SignUpDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
+import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.repository.UserRepository;
-import com.gyeongditor.storyfield.service.MailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +24,7 @@ public class UserService {
     private final MailService mailService;
 
 
-    public seungil.login_boilerplate.dto.UserResponseDTO signUp(seungil.login_boilerplate.dto.SignUpDTO signUpDTO) {
+    public UserResponseDTO signUp(SignUpDTO signUpDTO) {
         // 이메일 중복 체크
         if (isEmailAlreadyExists(signUpDTO.getEmail())) {
             throw new IllegalStateException("이미 등록된 이메일 입니다.");
@@ -50,7 +52,7 @@ public class UserService {
         userRepository.save(user);
 
         // UserResponseDTO 생성
-        return new seungil.login_boilerplate.dto.UserResponseDTO(user.getUserId(), user.getUserName(), user.getEmail());
+        return new UserResponseDTO(user.getUserId(), user.getUserName(), user.getEmail());
     }
 
     // 이메일 중복 체크 메서드
@@ -71,11 +73,11 @@ public class UserService {
     }
 
     // 이메일 검증
-    public seungil.login_boilerplate.dto.UserResponseDTO verifyEmail(String token) {
+    public UserResponseDTO verifyEmail(String token) {
         User user = findUserByVerificationToken(token);
         user.enableAccount(); // 엔티티 메서드 사용
         userRepository.save(user);
-        return new seungil.login_boilerplate.dto.UserResponseDTO(user.getEmail(), user.getUserName());
+        return new UserResponseDTO(user.getEmail(), user.getUserName());
     }
 
     // 비밀번호 암호화 메서드
@@ -84,17 +86,17 @@ public class UserService {
     }
 
     // 회원 정보 조회
-    public seungil.login_boilerplate.dto.UserResponseDTO getUserById(UUID userId) {
+    public UserResponseDTO getUserById(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
-            return new seungil.login_boilerplate.dto.UserResponseDTO(user.get().getUserId(), user.get().getEmail(), user.get().getUserName());
+            return new UserResponseDTO(user.get().getUserId(), user.get().getEmail(), user.get().getUserName());
         } else {
             throw new IllegalStateException("사용자를 찾을 수 없습니다.");
         }
     }
 
     // 회원 정보 수정
-    public seungil.login_boilerplate.dto.UserResponseDTO updateUser(UUID userId, UpdateUserDTO updateUserDTO) {
+    public UserResponseDTO updateUser(UUID userId, UpdateUserDTO updateUserDTO) {
         return userRepository.findById(userId).map(user -> {
             if (!user.getEmail().equals(updateUserDTO.getEmail())) {
                 verifyEmail(updateUserDTO.getEmail());
@@ -104,7 +106,7 @@ public class UserService {
             sendEmail(user.getEmail(), verificationToken, "회원 정보 수정용 이메일 인증");
 
             userRepository.save(user);
-            return new seungil.login_boilerplate.dto.UserResponseDTO(user.getEmail(), user.getUserName());
+            return new UserResponseDTO(user.getEmail(), user.getUserName());
         }).orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
     }
 
