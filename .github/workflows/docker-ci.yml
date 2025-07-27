@@ -8,11 +8,6 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
-    env:
-      SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-      SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -41,6 +36,9 @@ jobs:
             --build-arg SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
             --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
             --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
+            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --build-arg SPRING_EMAIL_USERNAME=${{ secrets.SPRING_EMAIL_USERNAME }} \
+            --build-arg SPRING_EMAIL_PASSWORD=${{ secrets.SPRING_EMAIL_PASSWORD }} \
             -t ${{ secrets.DOCKER_USERNAME }}/storyfield:latest .
 
       - name: Push Docker Image
