@@ -33,13 +33,15 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getUserId(),         // UUID 추가
                 user.getEmail(),
                 user.getPassword(),
-                user.getUserName(),
+                user.getUsername(),
                 user.isAccountNonExpired(),
                 user.isAccountNonLocked(),
                 user.isCredentialsNonExpired(),
                 user.isEnabled(),
                 user.getFailedLoginAttempts(),
                 user.getLockTime(),
+                user.getSocialType(),
+                user.getSocialId(),
                 Collections.emptyList()
         );
     }

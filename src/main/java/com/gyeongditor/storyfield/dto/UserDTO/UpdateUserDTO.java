@@ -10,5 +10,5 @@ import lombok.*;
 public class UpdateUserDTO {
     private String email;
     private String password;
-    private String userName;
+    private String username;
 }

@@ -12,10 +12,10 @@ public class UserResponseDTO {
 
     private UUID userId;
     private String email;
-    private String userName;
+    private String username;
 
-    public UserResponseDTO(String email, String userName) {
+    public UserResponseDTO(String email, String username) {
         this.email = email;
-        this.userName = userName;
+        this.username = username;
     }
 }
