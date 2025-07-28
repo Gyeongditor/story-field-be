@@ -5,6 +5,9 @@ import com.gyeongditor.storyfield.dto.UserDTO.ResponseDTO;
 import com.gyeongditor.storyfield.exception.UserAccountLockedException;
 import com.gyeongditor.storyfield.exception.UserNotEnabledException;
 import com.gyeongditor.storyfield.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -21,7 +24,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-
+    @Operation(summary = "로그인", description = "이메일과 비밀번호를 통해 로그인합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "계정 없음")
+    })
     @PostMapping("/login")
     public ResponseEntity<ResponseDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
         try {
@@ -47,7 +55,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
-
+    @Operation(summary = "로그아웃", description = "액세스 토큰을 통해 로그아웃합니다.")
     @DeleteMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader(name = "Refresh-Token") String refreshToken) {
         boolean logoutSuccess = authService.logout(refreshToken);
