@@ -38,7 +38,7 @@ public class UserService {
         // 회원 정보 생성
         User user = User.builder()
                 .email(signUpDTO.getEmail())
-                .userName(signUpDTO.getUsername())
+                .username(signUpDTO.getUsername())
                 .password(encodedPassword)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
@@ -52,7 +52,7 @@ public class UserService {
         userRepository.save(user);
 
         // UserResponseDTO 생성
-        return new UserResponseDTO(user.getUserId(), user.getUserName(), user.getEmail());
+        return new UserResponseDTO(user.getUserId(), user.getUsername(), user.getEmail());
     }
 
     // 이메일 중복 체크 메서드
@@ -77,7 +77,7 @@ public class UserService {
         User user = findUserByVerificationToken(token);
         user.enableAccount(); // 엔티티 메서드 사용
         userRepository.save(user);
-        return new UserResponseDTO(user.getEmail(), user.getUserName());
+        return new UserResponseDTO(user.getEmail(), user.getUsername());
     }
 
     // 비밀번호 암호화 메서드
@@ -89,7 +89,7 @@ public class UserService {
     public UserResponseDTO getUserById(UUID userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
-            return new UserResponseDTO(user.get().getUserId(), user.get().getEmail(), user.get().getUserName());
+            return new UserResponseDTO(user.get().getUserId(), user.get().getEmail(), user.get().getUsername());
         } else {
             throw new IllegalStateException("사용자를 찾을 수 없습니다.");
         }
@@ -106,7 +106,7 @@ public class UserService {
             sendEmail(user.getEmail(), verificationToken, "회원 정보 수정용 이메일 인증");
 
             userRepository.save(user);
-            return new UserResponseDTO(user.getEmail(), user.getUserName());
+            return new UserResponseDTO(user.getEmail(), user.getUsername());
         }).orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
     }
 

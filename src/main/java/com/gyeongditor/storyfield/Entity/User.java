@@ -32,7 +32,7 @@ public class User {
     private String password;
 
     @Column(nullable = false)
-    private String userName;
+    private String username;
 
     @CreationTimestamp // INSERT 쿼리가 발생할 때, 현재 시간을 자동으로 저장
     private LocalDateTime created_at; // 회원가입한 시간
@@ -47,10 +47,11 @@ public class User {
     private String mailVerificationToken; // 이메일 인증 토큰
     private int failedLoginAttempts; // 로그인 시도 횟수
     private LocalDateTime lockTime; // 계정 잠금 해제 시간
-
+    private String socialType; // 소셜 타입 (자체 로그인의 경우 Null)
+    private String socialId; // 소셜 ID  (자체 로그인의 경우 Null)
 
     public void updateUser(UpdateUserDTO updateUserDTO, PasswordEncoder passwordEncoder, String mailVerificationToken) {
-        this.userName = updateUserDTO.getUserName();
+        this.username = updateUserDTO.getUsername();
         this.email = updateUserDTO.getEmail();
         this.mailVerificationToken = mailVerificationToken;
         this.enabled = false;
@@ -59,6 +60,16 @@ public class User {
         if (updateUserDTO.getPassword() != null && !updateUserDTO.getPassword().equals(this.password)) {
             this.password = passwordEncoder.encode(updateUserDTO.getPassword());
         }
+    }
+
+    public void updateOAuthUser(String username, String email, String socialType, String socialId) {
+        this.username = username;
+        if (email != null) {
+            this.email = email;
+        }
+        this.socialType = socialType;
+        this.socialId = socialId;
+        this.enabled = true; // OAuth 로그인 후 사용자는 활성화 상태
     }
 
     public void enableAccount() {

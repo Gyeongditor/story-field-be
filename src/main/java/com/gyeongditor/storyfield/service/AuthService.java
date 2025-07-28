@@ -28,7 +28,7 @@ public class AuthService {
             // 토큰 생성
             String accessToken = jwtTokenProvider.createToken(authentication);
             String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-            String uuid = ((CustomUserDetails) authentication.getPrincipal()).getId().toString();
+            String uuid = ((CustomUserDetails) authentication.getPrincipal()).getUserId().toString();
 
             userDetailsService.processSuccessfulLogin(email);
 
