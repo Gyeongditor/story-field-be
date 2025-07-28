@@ -4,6 +4,9 @@ import com.gyeongditor.storyfield.dto.UserDTO.SignUpDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,11 @@ public class UserController {
     private final UserService userService;
 
     // 회원 가입
+    @Operation(summary = "회원가입", description = "신규 유저 등록")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "400", description = "입력값 오류")
+    })
     @PostMapping("/signup")
     public ResponseEntity<UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO) {
         UserResponseDTO userResponseDTO = userService.signUp(signUpDTO);
@@ -29,6 +37,7 @@ public class UserController {
     }
 
     // 회원 정보 조회
+    @Operation(summary = "유저 조회", description = "userId에 해당하는 유저 정보를 조회합니다.")
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponseDTO> getUser(@PathVariable UUID userId) {
         try {
@@ -40,6 +49,7 @@ public class UserController {
     }
 
     // 회원 정보 수정
+    @Operation(summary = "유저 정보 수정", description = "userId에 해당하는 유저 정보를 수정합니다.")
     @PutMapping("/{userId}")
     public ResponseEntity<UserResponseDTO> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         try {
@@ -51,6 +61,7 @@ public class UserController {
     }
 
     // 회원 삭제
+    @Operation(summary = "유저 삭제", description = "userId에 해당하는 유저를 삭제합니다.")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         try {
@@ -61,6 +72,7 @@ public class UserController {
         }
     }
     // 이메일 인증
+    @Operation(summary = "이메일 인증", description = "이메일로 전달된 토큰을 통해 회원 인증을 수행합니다.")
     @GetMapping("/verify/{token}")
     public ResponseEntity<String> verifyEmail(@PathVariable String token) {
         try {
