@@ -46,3 +46,9 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SPRING_EMAIL_USERNAME=${{ secrets.SPRING_EMAIL_USERNAME }}
             SPRING_EMAIL_PASSWORD=${{ secrets.SPRING_EMAIL_PASSWORD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
+            NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
