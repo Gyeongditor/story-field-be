@@ -60,6 +60,8 @@ dependencies {
 	// Swagger UI & OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
+	// S3
+	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
 	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
