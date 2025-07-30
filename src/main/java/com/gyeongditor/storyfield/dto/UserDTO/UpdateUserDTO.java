@@ -15,5 +15,5 @@ public class UpdateUserDTO {
     private String password;
     @Schema(description = "변경할 사용자 이름", example = "길동이")
     @NotBlank(message = "이름을 입력해주세요")
-    private String userName;
+    private String username;
 }

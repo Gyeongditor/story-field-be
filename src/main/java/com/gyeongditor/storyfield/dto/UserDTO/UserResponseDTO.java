@@ -17,10 +17,10 @@ public class UserResponseDTO {
     @Schema(description = "사용자 이메일", example = "user@example.com")
     private String email;
     @Schema(description = "사용자 이름", example = "홍길동")
-    private String userName;
+    private String username;
 
-    public UserResponseDTO(String email, String userName) {
+    public UserResponseDTO(String email, String username) {
         this.email = email;
-        this.userName = userName;
+        this.username = username;
     }
 }

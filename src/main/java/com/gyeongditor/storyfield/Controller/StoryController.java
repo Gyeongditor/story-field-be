@@ -5,6 +5,7 @@ import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.service.StoryService;
+import com.gyeongditor.storyfield.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -12,18 +13,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/story")
+@RequestMapping("/story")
 @RequiredArgsConstructor
 public class StoryController {
 
     private final StoryService storyService;
+    private final S3Service s3Service;
 
     @PostMapping("/{userId}")
     @Operation(
@@ -76,4 +81,15 @@ public class StoryController {
         storyService.deleteStory(userId, storyId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = s3Service.uploadFile(file);
+            return ResponseEntity.ok(url);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("업로드 실패");
+        }
+    }
+
 }

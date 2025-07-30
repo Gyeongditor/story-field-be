@@ -2,6 +2,9 @@ package com.gyeongditor.storyfield.config;
 
 import com.gyeongditor.storyfield.jwt.JwtAuthenticationFilter;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
+import com.gyeongditor.storyfield.oauth.handler.OAuth2LoginFailureHandler;
+import com.gyeongditor.storyfield.oauth.handler.OAuth2LoginSuccessHandler;
+import com.gyeongditor.storyfield.service.CustomOAuth2UserService;
 import com.gyeongditor.storyfield.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -25,7 +29,9 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
-
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oauth2LoginFailureHandler;
     @Bean // 비밀번호 암호화를 위한 PasswordEncoder 빈 생성
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -42,7 +48,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/verify/**","/login", "/auth/login", "/users/signup", "/",
+                        .requestMatchers("/oauth2/**","/users/verify/**","/login", "/auth/login", "/users/signup", "/",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/swagger-ui/index.html",
@@ -53,7 +59,15 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 // JWT 인증 필터 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider,
-                        customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
+                        customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")
+                        .failureHandler(oauth2LoginFailureHandler)
+                        .successHandler(oauth2LoginSuccessHandler)
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                );
 
         return httpSecurity.build();
     }
