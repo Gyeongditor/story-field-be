@@ -6,9 +6,7 @@ import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -18,12 +16,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RestControllerAdvice
 public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
-    /**
-     * 성공 응답: 컨트롤러가 반환하는 모든 데이터를 ApiResponse.success()로 감쌈
-     */
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        // ResponseEntity는 제외 (커스터마이징된 응답을 그대로 유지)
+        // ResponseEntity는 제외 (직접 ResponseEntity 반환한 경우는 건들지 않음)
         return !returnType.getParameterType().equals(ResponseEntity.class);
     }
 
@@ -35,34 +30,64 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
                                   org.springframework.http.server.ServerHttpRequest request,
                                   org.springframework.http.server.ServerHttpResponse response) {
 
-        // 이미 ApiResponse로 포장된 경우 그대로 반환
+        // 이미 ApiResponse 형태라면 그대로 반환
         if (body instanceof ApiResponse) {
             return body;
         }
 
-        // null 리턴 시 기본 성공 메시지
-        if (body == null) {
-            response.setStatusCode(HttpStatus.OK);
-            return ApiResponse.success(SuccessCode.SUCCESS_200_001, null);
+        // HTTP 메서드 가져오기
+        String method = request.getMethod().name();
+
+        // 상태 코드 및 SuccessCode 결정
+        HttpStatus status;
+        SuccessCode successCode;
+
+        switch (method) {
+            case "POST" -> {
+                status = HttpStatus.CREATED; // 201
+                successCode = SuccessCode.SUCCESS_201_001;
+            }
+            case "DELETE" -> {
+                status = HttpStatus.NO_CONTENT; // 204
+                successCode = SuccessCode.SUCCESS_204_001;
+            }
+            case "PUT", "PATCH" -> {
+                status = HttpStatus.OK; // 200
+                successCode = SuccessCode.SUCCESS_200_001; // 업데이트 성공
+            }
+            case "GET" -> {
+                status = HttpStatus.OK; // 200
+                successCode = SuccessCode.SUCCESS_200_001; // 조회 성공
+            }
+            default -> {
+                status = HttpStatus.OK;
+                successCode = SuccessCode.SUCCESS_200_001;
+            }
         }
 
-        // 데이터가 있는 경우
-        response.setStatusCode(HttpStatus.OK);
-        return ApiResponse.success(SuccessCode.SUCCESS_200_001, body);
+        // 상태 코드 적용
+        response.setStatusCode(status);
+
+        // 204(No Content)는 body가 없어야 함
+        if (status == HttpStatus.NO_CONTENT) {
+            return null;
+        }
+
+        // ApiResponse.success로 감싸서 반환
+        return ApiResponse.success(successCode, body);
     }
 
     /**
-     * 커스텀 예외 처리
+     * CustomException 처리
      */
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponse<Object>> handleCustomException(CustomException ex) {
         ErrorCode errorCode = ex.getErrorCode();
-
-        log.warn("[CustomException] code={}, message={}", errorCode.getCode(), errorCode.getMessage());
+        log.warn("[CustomException] code={}, message={}", errorCode.getCode(), ex.getCustomMessage());
 
         return ResponseEntity
                 .status(errorCode.getStatus())
-                .body(ApiResponse.error(errorCode));
+                .body(ApiResponse.error(errorCode, ex.getCustomMessage()));
     }
 
     /**
@@ -71,7 +96,6 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
         ErrorCode errorCode = ErrorCode.ETC_520_001;
-
         log.error("[UnhandledException] message={}", ex.getMessage(), ex);
 
         return ResponseEntity
