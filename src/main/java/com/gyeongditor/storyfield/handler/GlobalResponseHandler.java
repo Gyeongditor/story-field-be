@@ -1,6 +1,6 @@
 package com.gyeongditor.storyfield.handler;
 
-import com.gyeongditor.storyfield.dto.ApiResponse;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
@@ -31,7 +31,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
                                   org.springframework.http.server.ServerHttpResponse response) {
 
         // 이미 ApiResponse 형태라면 그대로 반환
-        if (body instanceof ApiResponse) {
+        if (body instanceof ApiResponseDTO) {
             return body;
         }
 
@@ -74,32 +74,32 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
         }
 
         // ApiResponse.success로 감싸서 반환
-        return ApiResponse.success(successCode, body);
+        return ApiResponseDTO.success(successCode, body);
     }
 
     /**
      * CustomException 처리
      */
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ApiResponse<Object>> handleCustomException(CustomException ex) {
+    public ResponseEntity<ApiResponseDTO<Object>> handleCustomException(CustomException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         log.warn("[CustomException] code={}, message={}", errorCode.getCode(), ex.getCustomMessage());
 
         return ResponseEntity
                 .status(errorCode.getStatus())
-                .body(ApiResponse.error(errorCode, ex.getCustomMessage()));
+                .body(ApiResponseDTO.error(errorCode, ex.getCustomMessage()));
     }
 
     /**
      * 예상치 못한 예외 처리
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
+    public ResponseEntity<ApiResponseDTO<Object>> handleException(Exception ex) {
         ErrorCode errorCode = ErrorCode.ETC_520_001;
         log.error("[UnhandledException] message={}", ex.getMessage(), ex);
 
         return ResponseEntity
                 .status(errorCode.getStatus())
-                .body(ApiResponse.error(errorCode));
+                .body(ApiResponseDTO.error(errorCode));
     }
 }

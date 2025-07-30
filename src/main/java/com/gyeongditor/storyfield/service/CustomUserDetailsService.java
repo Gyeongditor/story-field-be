@@ -2,16 +2,20 @@ package com.gyeongditor.storyfield.service;
 
 import com.gyeongditor.storyfield.Entity.CustomUserDetails;
 import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -25,14 +29,14 @@ public class CustomUserDetailsService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String userId) {
-        // 사용자 조회 실패 시 CustomException
         User user = userRepository.findByEmail(userId)
                 .orElseThrow(() -> new CustomException(
                         ErrorCode.USER_404_002,
                         "해당 userId(" + userId + ")를 가진 사용자를 찾을 수 없습니다."
                 ));
 
-        // UserDetails 반환
+        log.info(ApiResponseDTO.success(SuccessCode.AUTH_200_003, user.getEmail()).toString());
+
         return new CustomUserDetails(
                 user.getUserId(),
                 user.getEmail(),
@@ -56,18 +60,18 @@ public class CustomUserDetailsService implements UserDetailsService {
     public void handleAccountStatus(String email) {
         User user = findUserByEmail(email);
 
-        // 계정 활성화되지 않음
         if (!user.isEnabled()) {
             throw new CustomException(ErrorCode.AUTH_403_002);
         }
 
-        // 계정 잠김
         if (!user.isAccountNonLocked()) {
             throw new CustomException(
                     ErrorCode.USER_423_002,
                     "계정이 잠금되었습니다. " + user.getLockTime().plusMinutes(LOCKOUT_MINUTES) + " 이후에 다시 시도해주세요."
             );
         }
+
+        log.info(ApiResponseDTO.success(SuccessCode.AUTH_200_004, email).toString());
     }
 
     /**
@@ -80,16 +84,21 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.lockAccount();
             }
             userRepository.save(user);
+
+            log.warn(ApiResponseDTO.success(SuccessCode.AUTH_200_006,
+                    "현재 실패 횟수: " + user.getFailedLoginAttempts()).toString());
         });
     }
 
     /**
-     * 로그인 성공 처리
+     * 로그인 성공 처리 (실패 횟수 초기화)
      */
     public void processSuccessfulLogin(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
             user.resetFailedLoginAttempts();
             userRepository.save(user);
+
+            log.info(ApiResponseDTO.success(SuccessCode.AUTH_200_005, email).toString());
         });
     }
 

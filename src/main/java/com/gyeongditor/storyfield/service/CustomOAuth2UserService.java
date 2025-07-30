@@ -2,11 +2,13 @@ package com.gyeongditor.storyfield.service;
 
 import com.gyeongditor.storyfield.Entity.CustomOAuth2User;
 import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.oauth.user.OAuth2UserInfo;
 import com.gyeongditor.storyfield.oauth.user.OAuth2UserInfoFactory;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -40,7 +42,14 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             }
 
             // 사용자 저장/업데이트
-            saveOrUpdateUser(userInfo, registrationId);
+            boolean isNewUser = saveOrUpdateUser(userInfo, registrationId);
+
+            // 성공 로그 출력
+            if (isNewUser) {
+                log.info(ApiResponseDTO.success(SuccessCode.OAUTH2_201_001, userInfo.getEmail()).toString());
+            } else {
+                log.info(ApiResponseDTO.success(SuccessCode.OAUTH2_200_001, userInfo.getEmail()).toString());
+            }
 
             return new CustomOAuth2User(oauth2User, registrationId);
 
@@ -65,14 +74,19 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     /**
      * 기존 사용자 업데이트 또는 신규 사용자 생성
+     * @return true: 신규 사용자, false: 기존 사용자 업데이트
      */
-    private User saveOrUpdateUser(OAuth2UserInfo userInfo, String registrationId) {
-        User user = userRepository.findBySocialId(userInfo.getId())
-                .orElseGet(() -> createNewUser(userInfo, registrationId));
-
-        user.updateOAuthUser(userInfo.getName(), userInfo.getEmail(), registrationId, userInfo.getId());
-
-        return userRepository.save(user);
+    private boolean saveOrUpdateUser(OAuth2UserInfo userInfo, String registrationId) {
+        return userRepository.findBySocialId(userInfo.getId())
+                .map(user -> {
+                    user.updateOAuthUser(userInfo.getName(), userInfo.getEmail(), registrationId, userInfo.getId());
+                    userRepository.save(user);
+                    return false; // 기존 사용자
+                })
+                .orElseGet(() -> {
+                    userRepository.save(createNewUser(userInfo, registrationId));
+                    return true; // 신규 사용자
+                });
     }
 
     /**
