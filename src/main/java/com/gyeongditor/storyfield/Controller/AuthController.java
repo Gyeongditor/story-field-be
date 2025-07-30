@@ -1,22 +1,17 @@
 package com.gyeongditor.storyfield.Controller;
 
 import com.gyeongditor.storyfield.dto.UserDTO.LoginDTO;
-import com.gyeongditor.storyfield.dto.UserDTO.ResponseDTO;
-import com.gyeongditor.storyfield.exception.UserAccountLockedException;
-import com.gyeongditor.storyfield.exception.UserNotEnabledException;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;   // Swagger 전용
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequestMapping("/auth")
@@ -24,46 +19,35 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    /**
+     * 로그인
+     */
     @Operation(summary = "로그인", description = "이메일과 비밀번호를 통해 로그인합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "로그인 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "200", description = "로그인 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (아이디 또는 비밀번호 불일치)"),
+            @ApiResponse(responseCode = "403", description = "계정이 활성화되지 않음"),
+            @ApiResponse(responseCode = "423", description = "계정 잠금"),
             @ApiResponse(responseCode = "404", description = "계정 없음")
     })
     @PostMapping("/login")
-    public ResponseEntity<ResponseDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
-        try {
-            HttpHeaders headers = authService.login(loginDTO.getEmail(), loginDTO.getPassword());
-            ResponseDTO response = new ResponseDTO(HttpStatus.OK.value(), "로그인에 성공했습니다.");
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(response);
-        } catch (UsernameNotFoundException e) {
-            ResponseDTO response = new ResponseDTO(HttpStatus.NOT_FOUND.value(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        } catch (UserNotEnabledException e) {
-            ResponseDTO response = new ResponseDTO(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        } catch (UserAccountLockedException e) {
-            ResponseDTO response = new ResponseDTO(HttpStatus.LOCKED.value(), e.getMessage());
-            return ResponseEntity.status(HttpStatus.LOCKED).body(response);
-        } catch (AuthenticationException e) {
-            int remainingAttempts = authService.getRemainingLoginAttempts(loginDTO.getEmail());
-            String message = "이메일 주소나 비밀번호가 올바르지 않습니다. " +
-                    remainingAttempts + "번 더 로그인에 실패하면 계정이 잠길 수 있습니다.";
-            ResponseDTO response = new ResponseDTO(HttpStatus.UNAUTHORIZED.value(), message);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
+    public ApiResponseDTO<HttpHeaders> login(@Valid @RequestBody LoginDTO loginDTO) {
+        return authService.login(loginDTO.getEmail(), loginDTO.getPassword());
     }
-    @Operation(summary = "로그아웃", description = "액세스 토큰을 통해 로그아웃합니다.")
-    @DeleteMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader(name = "Refresh-Token") String refreshToken) {
-        boolean logoutSuccess = authService.logout(refreshToken);
 
-        if (logoutSuccess) {
-            return ResponseEntity.noContent().build(); // 204 No Content
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // or INTERNAL_SERVER_ERROR
-        }
+    /**
+     * 로그아웃
+     */
+    @Operation(summary = "로그아웃", description = "Refresh Token을 통해 로그아웃합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @ApiResponse(responseCode = "500", description = "로그아웃 처리 중 서버 오류")
+    })
+    @DeleteMapping("/logout")
+    public ApiResponseDTO<String> logout(@RequestHeader(name = "Refresh-Token") String refreshToken) {
+        return authService.logout(refreshToken);
     }
 }

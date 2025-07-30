@@ -1,95 +1,62 @@
 package com.gyeongditor.storyfield.Controller;
 
-
 import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.StoryService;
-import com.gyeongditor.storyfield.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/story")
 @RequiredArgsConstructor
+@RequestMapping("/stories")
 public class StoryController {
 
     private final StoryService storyService;
-    private final S3Service s3Service;
 
+    @Operation(summary = "스토리 저장", description = "사용자가 스토리를 저장합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "스토리 생성 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
     @PostMapping("/{userId}")
-    @Operation(
-            summary = "스토리 저장",
-            description = "사용자의 동화와 페이지 정보를 저장합니다."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "스토리 저장 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "404", description = "사용자 없음")
-    })
-    public ResponseEntity<String> saveStory(@Parameter(description = "사용자 UUID", required = true)
-            @PathVariable UUID userId,
-            @org.springframework.web.bind.annotation.RequestBody SaveStoryDTO dto) {
-        String storyId = storyService.saveStory(userId, dto);
-        return ResponseEntity.ok(storyId);
+    public ApiResponseDTO<String> saveStory(@PathVariable UUID userId, @Valid @RequestBody SaveStoryDTO dto) {
+        return storyService.saveStory(userId, dto);
     }
 
+    @Operation(summary = "스토리 페이지 조회", description = "스토리 ID에 해당하는 페이지 전체 조회")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "스토리 페이지 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "스토리를 찾을 수 없음")
+    })
     @GetMapping("/{storyId}/pages")
-    @Operation(summary = "스토리 페이지 조회", description = "스토리를 페이지별로 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "스토리 없음")
-    })
-    public ResponseEntity<List<StoryPageResponseDTO>> getStoryPages(@Parameter(description = "스토리 UUID", required = true) @PathVariable UUID storyId) {
-        List<StoryPageResponseDTO> pages = storyService.getStoryPages(storyId);
-        return ResponseEntity.ok(pages);
+    public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(@PathVariable UUID storyId) {
+        return storyService.getStoryPages(storyId);
     }
 
+    @Operation(summary = "메인 페이지 스토리 조회", description = "메인 페이지에서 스토리 목록(썸네일)을 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "스토리 목록 조회 성공")
     @GetMapping("/main-thumbnails")
-    @Operation(summary = "메인화면 스토리 썸네일 목록 (페이징)", description = "스토리 제목과 썸네일을 페이지별로 가져옵니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공")
-    })
-    public ResponseEntity<List<StoryThumbnailResponseDTO>> getMainThumbnails(@RequestParam(defaultValue = "0") int page) {
-        List<StoryThumbnailResponseDTO> thumbnails = storyService.getMainPageStories(page);
-        return ResponseEntity.ok(thumbnails);
+    public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(@RequestParam(defaultValue = "0") int page) {
+        return storyService.getMainPageStories(page);
     }
 
+    @Operation(summary = "스토리 삭제", description = "사용자가 본인 스토리를 삭제합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "스토리 삭제 성공"),
+            @ApiResponse(responseCode = "403", description = "삭제 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "스토리 또는 사용자를 찾을 수 없음")
+    })
     @DeleteMapping("/{userId}/{storyId}")
-    @Operation(
-            summary = "스토리 삭제",
-            description = "스토리 ID를 이용하여 해당 동화를 삭제합니다."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "삭제 성공"),
-            @ApiResponse(responseCode = "404", description = "스토리 없음")
-    })
-    public ResponseEntity<Void> deleteStory(@Parameter(description = "스토리 ID", required = true) @PathVariable UUID userId, @PathVariable UUID storyId) {
-        storyService.deleteStory(userId, storyId);
-        return ResponseEntity.ok().build();
+    public ApiResponseDTO<Void> deleteStory(@PathVariable UUID userId, @PathVariable UUID storyId) {
+        return storyService.deleteStory(userId, storyId);
     }
-
-    @PostMapping("/upload")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
-        try {
-            String url = s3Service.uploadFile(file);
-            return ResponseEntity.ok(url);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("업로드 실패");
-        }
-    }
-
 }
