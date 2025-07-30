@@ -50,7 +50,7 @@ public class UserService {
         sendEmail(user.getEmail(), verificationToken, "회원가입 이메일 인증");
         userRepository.save(user);
 
-        UserResponseDTO dto = new UserResponseDTO(user.getUserId(), user.getUsername(), user.getEmail());
+        UserResponseDTO dto = new UserResponseDTO(user.getUserId(), user.getEmail(), user.getUsername());
         return ApiResponseDTO.success(SuccessCode.USER_201_001, dto);
     }
 
