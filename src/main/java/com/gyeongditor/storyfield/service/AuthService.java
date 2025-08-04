@@ -72,16 +72,10 @@ public class AuthService {
     /**
      * 로그아웃 (Refresh Token 블랙리스트 처리)
      */
-    public ApiResponseDTO<String> logout(String token) {
-        boolean success = jwtTokenProvider.blacklistRefreshToken(token);
-
-        if (!success) {
-            throw new CustomException(
-                    ErrorCode.SERVER_500_001,
-                    "로그아웃 처리 중 오류가 발생했습니다."
-            );
-        }
+    public ApiResponseDTO<String> logout(String refreshToken) {
+        jwtTokenProvider.blacklistRefreshTokenOrThrow(refreshToken); // 실패 시 예외 던짐 → GlobalResponseHandler에서 처리됨
 
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
+
 }
