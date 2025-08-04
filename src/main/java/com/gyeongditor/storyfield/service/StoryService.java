@@ -3,20 +3,18 @@ package com.gyeongditor.storyfield.service;
 import com.gyeongditor.storyfield.Entity.Story;
 import com.gyeongditor.storyfield.Entity.StoryPage;
 import com.gyeongditor.storyfield.Entity.User;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
-import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
+import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.repository.StoryRepository;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,13 +27,16 @@ public class StoryService {
 
     private final UserRepository userRepository;
     private final StoryRepository storyRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     /**
      * 스토리 저장
      */
-    public ApiResponseDTO<String> saveStory(UUID userId, SaveStoryDTO dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_404_001));
+    public ApiResponseDTO<String> saveStory(String accessToken, SaveStoryDTO dto) {
+        String email = jwtTokenProvider.getEmail(accessToken);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_404_002, "토큰에 해당하는 사용자가 존재하지 않습니다."));
 
         Story story = Story.builder()
                 .user(user)
@@ -106,9 +107,11 @@ public class StoryService {
     /**
      * 스토리 삭제
      */
-    public ApiResponseDTO<Void> deleteStory(UUID userId, UUID storyId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_404_001));
+    public ApiResponseDTO<Void> deleteStory(String accessToken, UUID storyId) {
+        String email = jwtTokenProvider.getEmail(accessToken);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_404_002, "토큰에 해당하는 사용자가 존재하지 않습니다."));
 
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.STORY_404_001));
