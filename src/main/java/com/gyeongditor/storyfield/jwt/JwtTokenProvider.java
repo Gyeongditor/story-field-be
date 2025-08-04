@@ -1,8 +1,9 @@
 package com.gyeongditor.storyfield.jwt;
 
-
 import com.gyeongditor.storyfield.Entity.CustomUserDetails;
+import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
+import com.gyeongditor.storyfield.response.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -22,7 +23,7 @@ import java.util.UUID;
 public class JwtTokenProvider {
 
     @Value("${jwt.secret}")
-    private String secretKey; // 이미 Base64로 인코딩된 시크릿키
+    private String secretKey;
 
     @Value("${jwt.token-validity-in-seconds}")
     private long accessTokenValiditySeconds;
@@ -31,25 +32,28 @@ public class JwtTokenProvider {
     private long refreshTokenValiditySeconds;
 
     private final JwtTokenRedisRepository jwtTokenRedisRepository;
-
     private final UserDetailsService userDetailsService;
 
-    // 주어진 Authentication 객체를 기반으로 JWT 토큰을 생성한다.
+    /**
+     * AccessToken 생성
+     */
     public String createToken(Authentication authentication) {
         return generateToken(authentication, accessTokenValiditySeconds);
     }
 
+    /**
+     * RefreshToken 생성
+     */
     public String createRefreshToken(Authentication authentication) {
         return generateToken(authentication, refreshTokenValiditySeconds);
     }
 
-    // JWT 토큰 생성
     private String generateToken(Authentication authentication, long validitySeconds) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Claims claims = Jwts.claims().setSubject(userDetails.getEmail());
 
         Date now = new Date();
-        Date validity = new Date(now.getTime() + validitySeconds * 1000);
+        Date expiry = new Date(now.getTime() + validitySeconds * 1000);
 
         String jti = UUID.randomUUID().toString();
 
@@ -57,82 +61,103 @@ public class JwtTokenProvider {
                 .setClaims(claims)
                 .setId(jti)
                 .setIssuedAt(now)
-                .setExpiration(validity)
+                .setExpiration(expiry)
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
     }
 
-    // JWT 토큰의 유효성 검사
-    // 유효한 토큰일 경우 true, 그렇지 않으면 false 리턴
-    public boolean validateToken(String token) {
+    /**
+     * 토큰 유효성 검사 실패 시 예외 발생
+     */
+    public void validateOrThrow(String token) {
         try {
             Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-            return true;
         } catch (Exception e) {
-            return false;
+            throw new CustomException(ErrorCode.AUTH_401_004, "유효하지 않은 액세스 토큰입니다.");
         }
     }
 
-    // JWT 토큰에서 사용자 이름을 추출
-    public String getEmail(String token) {
-        return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
+    public void validateRefreshOrThrow(String refreshToken) {
+        try {
+            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUTH_401_005, "유효하지 않은 리프레시 토큰입니다.");
+        }
     }
 
-    // HttpServletRequest에서 Authorization 헤더에서 JWT 토큰을 추출
+    /**
+     * Email 추출
+     */
+    public String getEmail(String token) {
+        return parseClaims(token).getSubject();
+    }
+
     public String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Bearer 토큰을 제외한 JWT 토큰 리턴
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
         }
         return null;
     }
 
-    // 리프레시 토큰 검증
-    public boolean validateRefreshToken(String refreshToken) {
-        try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // HttpServletRequest에서 Refresh 토큰을 추출
     public String resolveRefreshToken(HttpServletRequest request) {
-        String refreshToken = request.getHeader("Refresh-Token");
-        return refreshToken;
+        return request.getHeader("Refresh-Token");
     }
 
-
-    // Refresh 토큰을 블랙리스트에 추가하고, 성공적으로 추가되면 true를 반환한다.
-    public boolean blacklistRefreshToken(String refreshToken) {
-        try {
-            String tokenId = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken).getBody().getId();
-
-            if (tokenId == null) {
-                throw new IllegalArgumentException("토큰에 jti 클레임이 포함되어 있지 않습니다.");
-            }
-
-            return jwtTokenRedisRepository.addTokenToBlacklist(tokenId, refreshTokenValiditySeconds);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // 블랙리스트에 있는지 확인 (Refresh Token)
-    public boolean isRefreshTokenBlacklisted(String refreshToken) {
-        String tokenId = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken).getBody().getId();
-        return jwtTokenRedisRepository.isTokenBlacklisted(tokenId);
-    }
-
-    // Refresh 토큰을 사용하여 새로운 Access 토큰 생성
+    /**
+     * RefreshToken → AccessToken 재발급
+     */
     public String createTokenFromRefreshToken(String refreshToken) {
-        if (!validateRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
+        validateRefreshOrThrow(refreshToken);
 
         String email = getEmail(refreshToken);
         CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
-        return generateToken(new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()), accessTokenValiditySeconds);
+
+        return generateToken(
+                new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities()),
+                accessTokenValiditySeconds
+        );
+    }
+
+    /**
+     * 인증 객체 추출
+     */
+    public Authentication getAuthentication(String token) {
+        String email = getEmail(token);
+        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+        return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+    }
+
+    /**
+     * 토큰 파싱
+     */
+    private Claims parseClaims(String token) {
+        try {
+            return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUTH_401_004, "토큰 파싱에 실패했습니다.");
+        }
+    }
+
+    /**
+     * 블랙리스트 처리
+     */
+    public void blacklistRefreshTokenOrThrow(String refreshToken) {
+        Claims claims = parseClaims(refreshToken);
+        String tokenId = claims.getId();
+
+        if (tokenId == null) {
+            throw new CustomException(ErrorCode.AUTH_401_007, "토큰에 jti 클레임이 없습니다.");
+        }
+
+        boolean success = jwtTokenRedisRepository.addTokenToBlacklist(tokenId, refreshTokenValiditySeconds);
+        if (!success) {
+            throw new CustomException(ErrorCode.SERVER_500_001, "토큰 블랙리스트 등록 실패");
+        }
+    }
+
+    public boolean isRefreshTokenBlacklisted(String refreshToken) {
+        String tokenId = parseClaims(refreshToken).getId();
+        return jwtTokenRedisRepository.isTokenBlacklisted(tokenId);
     }
 }
