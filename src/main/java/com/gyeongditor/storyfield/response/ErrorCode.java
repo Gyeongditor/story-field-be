@@ -69,10 +69,11 @@ public enum ErrorCode {
     SERVER_502_002(HttpStatus.BAD_GATEWAY, "SERVER_502_002", "캐시 서버 오류"),
 
     // ===================== 8. 파일/업로드 관련 (File & Upload) =====================
-    FILE_413_001(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_413_001", "파일 크기 초과"),
-    FILE_415_001(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "FILE_415_001", "파일 확장자 허용 안됨"),
-    FILE_500_001(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_001", "이미지 업로드 실패 (변환 오류)"),
-    FILE_500_002(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_002", "동영상 처리 실패 (인코딩 오류)"),
+    FILE_500_001(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_001", "파일 업로드 중 오류 발생"),
+    FILE_500_002(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_002", "Presigned URL 생성 실패"),
+    FILE_500_003(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_003", "파일 URL 조회 실패"),
+    FILE_500_004(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_004", "파일 삭제 실패"),
+
 
     // ===================== 9. 정책/보안 관련 (Policy & Security) =====================
     SEC_403_001(HttpStatus.FORBIDDEN, "SEC_403_001", "비정상 요청 탐지"),
