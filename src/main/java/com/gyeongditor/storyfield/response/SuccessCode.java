@@ -36,9 +36,13 @@ public enum SuccessCode {
     AUTH_200_003(HttpStatus.OK, "AUTH_200_003", "사용자 정보 로드가 성공적으로 완료되었습니다."),
     AUTH_200_004(HttpStatus.OK, "AUTH_200_004", "계정 상태가 정상입니다."),
     AUTH_200_005(HttpStatus.OK, "AUTH_200_005", "로그인 실패 횟수가 초기화되었습니다."),
-    AUTH_200_006(HttpStatus.OK, "AUTH_200_006", "로그인 실패 횟수가 업데이트되었습니다.");
+    AUTH_200_006(HttpStatus.OK, "AUTH_200_006", "로그인 실패 횟수가 업데이트되었습니다."),
 
-
+    // ===================== 8. 파일 성공 =====================
+    FILE_200_001(HttpStatus.OK, "FILE_200_001", "파일 업로드 성공"),
+    FILE_200_002(HttpStatus.OK, "FILE_200_002", "Presigned URL 생성 성공"),
+    FILE_200_003(HttpStatus.OK, "FILE_200_003", "파일 URL 조회 성공"),
+    FILE_204_001(HttpStatus.NO_CONTENT, "FILE_204_001", "파일 삭제 성공");
 
     // ===================== 필드 =====================
     private final HttpStatus status;
