@@ -37,7 +37,7 @@ public class CustomUserDetails implements UserDetails {
         this.accountNonExpired = true; // 기본값
         this.accountNonLocked = true;
         this.credentialsNonExpired = true;
-        this.enabled = true;
+        this.enabled = user.isEnabled(); // ✅ 기존의 true → user 값으로 교체
         this.failedLoginAttempts = user.getFailedLoginAttempts();
         this.lockTime = user.getLockTime();
         this.socialType = user.getSocialType();
