@@ -18,9 +18,25 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        // ResponseEntity는 제외 (직접 ResponseEntity 반환한 경우는 건들지 않음)
-        return !returnType.getParameterType().equals(ResponseEntity.class);
+        // ResponseEntity는 제외
+        if (returnType.getParameterType().equals(ResponseEntity.class)) {
+            return false;
+        }
+
+        // Swagger 요청은 ResponseBodyAdvice 적용 제외
+        String path = returnType.getContainingClass().getName();
+        jakarta.servlet.http.HttpServletRequest req =
+                ((org.springframework.web.context.request.ServletRequestAttributes)
+                        org.springframework.web.context.request.RequestContextHolder.getRequestAttributes())
+                        .getRequest();
+        String uri = req.getRequestURI();
+        if (uri.startsWith("/v3/api-docs") || uri.startsWith("/swagger-ui")) {
+            return false;
+        }
+
+        return true;
     }
+
 
     @Override
     public Object beforeBodyWrite(Object body,
