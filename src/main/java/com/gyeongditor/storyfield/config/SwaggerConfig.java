@@ -60,11 +60,13 @@ public class SwaggerConfig {
     }
 
     // 경로 기반 그룹  수정
-    @Bean public GroupedOpenApi authApi()  { return GroupedOpenApi.builder().group("auth").pathsToMatch("/auth/**").build(); }
-    @Bean public GroupedOpenApi userApi()  { return GroupedOpenApi.builder().group("user").pathsToMatch("/users/**").build(); }
-    @Bean public GroupedOpenApi storyApi() { return GroupedOpenApi.builder().group("story").pathsToMatch("/stories/**").build(); }
-    @Bean public GroupedOpenApi imageApi() { return GroupedOpenApi.builder().group("image").pathsToMatch("/images/**").build(); }
-    @Bean public GroupedOpenApi healthApi(){ return GroupedOpenApi.builder().group("health").pathsToMatch("/health/**").build(); }
+    @Bean public GroupedOpenApi allApis() {
+        return GroupedOpenApi.builder()
+                .group("all")
+                .packagesToScan("com.gyeongditor.storyfield")
+                .pathsToMatch("/**")
+                .build();
+    }
 
     // 전역 기본 응답 401 403 500 자동 부여  수정
     @Bean
