@@ -32,7 +32,7 @@ public class ImageController {
             @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
             @ApiResponse(responseCode = "500", description = "Presigned URL 생성 실패")
     })
-    @GetMapping("/image-url")
+    @GetMapping("/presign")
     public ApiResponseDTO<String> getPresignedUrl(
             @Parameter(description = "S3에 저장될 파일명 (확장자 포함)", required = true)
             @RequestParam String fileName,
