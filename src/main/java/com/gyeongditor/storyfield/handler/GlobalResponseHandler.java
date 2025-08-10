@@ -1,54 +1,55 @@
 package com.gyeongditor.storyfield.handler;
 
-import com.amazonaws.AmazonClientException;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
-import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.handler.mapper.SuccessCodeMapper;
+import com.gyeongditor.storyfield.handler.mapper.*;
 import com.gyeongditor.storyfield.response.SuccessCode;
-import com.gyeongditor.storyfield.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.bind.BindException;
 import org.springframework.core.MethodParameter;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.*;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.io.IOException;
 
 @Slf4j
-@RequiredArgsConstructor
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
-    private final AuthService authService;
+    private final SuccessCodeMapper successCodeMapper;
 
-    // ✅ 공통 성공 응답 처리
+    // (기존) 에러 매퍼들 …
+    private final AuthErrorMapper authErrorMapper;
+    private final OAuth2ErrorMapper oAuth2ErrorMapper;
+    private final RequestErrorMapper requestErrorMapper;
+    private final FileErrorMapper fileErrorMapper;
+    private final MailErrorMapper mailErrorMapper;
+    private final ResourceErrorMapper resourceErrorMapper;
+    private final ServerErrorMapper serverErrorMapper;
+    private final PolicyErrorMapper policyErrorMapper;
+    private final BusinessErrorMapper businessErrorMapper;
+    private final FallbackErrorMapper fallbackErrorMapper;
+
+    // ====== 성공 응답 래핑 ======
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        // ResponseEntity는 제외
-        if (returnType.getParameterType().equals(ResponseEntity.class)) {
-            return false;
-        }
-
-        // Swagger 요청은 ResponseBodyAdvice 적용 제외
-        String path = returnType.getContainingClass().getName();
-        jakarta.servlet.http.HttpServletRequest req =
-                ((org.springframework.web.context.request.ServletRequestAttributes)
-                        org.springframework.web.context.request.RequestContextHolder.getRequestAttributes())
-                        .getRequest();
-        String uri = req.getRequestURI();
-        if (uri.startsWith("/v3/api-docs") || uri.startsWith("/swagger-ui")) {
-            return false;
-        }
-
-        return true;
+        return !returnType.getParameterType().equals(ResponseEntity.class);
     }
 
     @Override
@@ -61,143 +62,106 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
         if (body instanceof ApiResponseDTO) return body;
 
-        String method = request.getMethod().name();
-        HttpStatus status;
-        SuccessCode successCode;
+        HttpMethod method = request.getMethod(); // null 가능성 체크 필요
+        String path = request.getURI().getPath();
 
-        switch (method) {
-            case "POST" -> {
-                status = HttpStatus.CREATED;
-                successCode = SuccessCode.SUCCESS_201_001;
-            }
-            case "DELETE" -> {
-                status = HttpStatus.NO_CONTENT;
-                successCode = SuccessCode.SUCCESS_204_001;
-            }
-            default -> {
-                status = HttpStatus.OK;
-                successCode = SuccessCode.SUCCESS_200_001;
-            }
-        }
+        HttpStatus statusByMethod;
+        if (method == HttpMethod.POST)       statusByMethod = HttpStatus.CREATED;
+        else if (method == HttpMethod.DELETE) statusByMethod = HttpStatus.NO_CONTENT;
+        else                                  statusByMethod = HttpStatus.OK;
 
-        response.setStatusCode(status);
-        if (status == HttpStatus.NO_CONTENT) return null;
+        // 도메인 성공코드 우선 매핑
+        SuccessCode success = successCodeMapper.resolve(path, method, statusByMethod);
 
-        return ApiResponseDTO.success(successCode, body);
+        response.setStatusCode(success.getStatus());
+        if (success.getStatus() == HttpStatus.NO_CONTENT) return null;
+
+        return ApiResponseDTO.success(success, body);
     }
 
-    // ✅ CustomException 처리
+    // ====== 에러 응답 (중략: 이전에 분리해둔 매퍼 기반 처리 그대로 유지) ======
+
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleCustomException(CustomException ex) {
-        ErrorCode errorCode = ex.getErrorCode();
-        log.warn("[CustomException] code={}, message={}", errorCode.getCode(), ex.getCustomMessage());
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, ex.getCustomMessage()));
+    public ResponseEntity<ApiResponseDTO<Object>> onCustom(CustomException ex) {
+        var code = ex.getErrorCode();
+        log.warn("[CustomException] {} - {}", code.getCode(), ex.getCustomMessage());
+        return ResponseEntity.status(code.getStatus()).body(ApiResponseDTO.error(code, ex.getCustomMessage()));
     }
 
-    // ✅ Spring Security 인증 오류
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
-        String email = extractEmailFromRequest(request);
-        if (email != null) {
-            authService.handleLoginFailure(email);
-        }
-
-        ErrorCode errorCode = ErrorCode.AUTH_401_004;
-        log.warn("[AuthenticationException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "인증 정보가 유효하지 않습니다."));
+    @ExceptionHandler({ AuthenticationException.class, AccessDeniedException.class })
+    public ResponseEntity<ApiResponseDTO<Object>> onAuth(Exception ex) {
+        var mapped = authErrorMapper.map(ex);
+        log.warn("[Auth] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ OAuth2 인증 오류
     @ExceptionHandler(OAuth2AuthenticationException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleOAuth2Exception(OAuth2AuthenticationException ex) {
-        ErrorCode errorCode = ErrorCode.AUTH_401_007;
-        log.warn("[OAuth2AuthenticationException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "OAuth2 인증 중 오류가 발생했습니다."));
+    public ResponseEntity<ApiResponseDTO<Object>> onOAuth2(OAuth2AuthenticationException ex) {
+        var mapped = oAuth2ErrorMapper.map(ex);
+        log.warn("[OAuth2] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ 인가 오류
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleAccessDeniedException(AccessDeniedException ex) {
-        ErrorCode errorCode = ErrorCode.AUTH_403_002;
-        log.warn("[AccessDeniedException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "접근 권한이 없습니다."));
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class, BindException.class,
+            MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class,
+            HttpRequestMethodNotSupportedException.class, HttpMediaTypeNotSupportedException.class,
+            IllegalArgumentException.class
+    })
+    public ResponseEntity<ApiResponseDTO<Object>> onRequest(Exception ex) {
+        var mapped = requestErrorMapper.map(ex);
+        log.warn("[Request] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ 잘못된 요청 파라미터 등
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        ErrorCode errorCode = ErrorCode.REQ_400_001;
-        log.warn("[IllegalArgumentException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, ex.getMessage()));
+    @ExceptionHandler({ IOException.class, com.amazonaws.AmazonClientException.class })
+    public ResponseEntity<ApiResponseDTO<Object>> onFile(Exception ex) {
+        var mapped = fileErrorMapper.map(ex);
+        log.error("[File] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ 메일 전송 실패
-    @ExceptionHandler(MailException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleMailException(MailException ex) {
-        ErrorCode errorCode = ErrorCode.MAIL_500_001;
-        log.error("[MailException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "메일 전송에 실패했습니다. 관리자에게 문의해주세요."));
+    @ExceptionHandler(org.springframework.mail.MailException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> onMail(org.springframework.mail.MailException ex) {
+        var mapped = mailErrorMapper.map(ex);
+        log.error("[Mail] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ 파일 업로드 등 입출력 예외
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleIOException(IOException ex) {
-        ErrorCode errorCode = ErrorCode.FILE_500_001;
-        log.error("[IOException] {}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "파일 입출력 중 오류가 발생했습니다."));
+    @ExceptionHandler({
+            jakarta.persistence.EntityNotFoundException.class,
+            org.springframework.dao.OptimisticLockingFailureException.class,
+            org.springframework.dao.DataIntegrityViolationException.class
+    })
+    public ResponseEntity<ApiResponseDTO<Object>> onResource(Exception ex) {
+        var mapped = resourceErrorMapper.map(ex);
+        log.warn("[Resource] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ AWS S3 예외
-    @ExceptionHandler(AmazonClientException.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleAmazonException(AmazonClientException ex) {
-        ErrorCode errorCode = ErrorCode.FILE_500_002;
-        log.error("[AmazonS3 Error] {}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode, "S3 작업 처리 중 오류가 발생했습니다."));
+    @ExceptionHandler({
+            org.springframework.dao.DataAccessResourceFailureException.class,
+            org.springframework.web.client.RestClientException.class,
+            org.springframework.web.server.ResponseStatusException.class,
+            java.util.concurrent.TimeoutException.class
+    })
+    public ResponseEntity<ApiResponseDTO<Object>> onServerInfra(Exception ex) {
+        var mapped = serverErrorMapper.map(ex);
+        log.error("[Server/Infra] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
-    // ✅ 알 수 없는 예외
+    @ExceptionHandler(org.springframework.security.web.csrf.CsrfException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> onPolicy(Exception ex) {
+        var mapped = policyErrorMapper.map(ex);
+        log.warn("[Policy] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponseDTO<Object>> handleException(Exception ex) {
-        ErrorCode errorCode = ErrorCode.ETC_520_001;
-        log.error("[UnhandledException] message={}", ex.getMessage(), ex);
-
-        return ResponseEntity
-                .status(errorCode.getStatus())
-                .body(ApiResponseDTO.error(errorCode));
-    }
-
-    // ✅ WebRequest로부터 email 파라미터 추출
-    private String extractEmailFromRequest(WebRequest request) {
-        try {
-            String email = request.getParameter("email");
-            return (email != null && !email.isBlank()) ? email : null;
-        } catch (Exception e) {
-            log.warn("[extractEmailFromRequest] 이메일 파라미터 추출 실패", e);
-            return null;
-        }
+    public ResponseEntity<ApiResponseDTO<Object>> onUnhandled(Exception ex) {
+        var mapped = fallbackErrorMapper.map(ex);
+        log.error("[Unhandled] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 }
