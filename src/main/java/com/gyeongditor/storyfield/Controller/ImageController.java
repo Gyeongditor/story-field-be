@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,7 +34,7 @@ public class ImageController {
             @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
             @ApiResponse(responseCode = "500", description = "Presigned URL 생성 실패")
     })
-    @GetMapping("/image-url")
+    @GetMapping("/presign")
     public ApiResponseDTO<String> getPresignedUrl(
             @Parameter(description = "S3에 저장될 파일명 (확장자 포함)", required = true)
             @RequestParam String fileName,
@@ -45,6 +46,7 @@ public class ImageController {
         return s3Service.generatePresignedUrl(fileName, accessToken);
     }
 
+    @SneakyThrows
     @Operation(
             summary = "이미지 업로드",
             description = "Multipart 형식으로 이미지를 업로드하고, 업로드된 이미지의 S3 URL을 반환합니다."

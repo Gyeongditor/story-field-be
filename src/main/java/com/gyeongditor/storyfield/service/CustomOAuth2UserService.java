@@ -28,70 +28,41 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
-        try {
-            // Provider ID (Google, Kakao 등)
-            String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        // OAuth2 provider ID (e.g., google, kakao)
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
 
-            // 사용자 정보 가져오기
-            OAuth2User oauth2User = getOAuth2User(userRequest);
+        // 사용자 정보 가져오기
+        OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(userRequest);
 
-            // OAuth2UserInfo 추출
-            OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationId, oauth2User.getAttributes());
-            if (userInfo == null) {
-                throw new CustomException(ErrorCode.AUTH_401_008, "지원하지 않는 OAuth2 Provider: " + registrationId);
-            }
-
-            // 사용자 저장/업데이트
-            boolean isNewUser = saveOrUpdateUser(userInfo, registrationId);
-
-            // 성공 로그 출력
-            if (isNewUser) {
-                log.info(ApiResponseDTO.success(SuccessCode.OAUTH2_201_001, userInfo.getEmail()).toString());
-            } else {
-                log.info(ApiResponseDTO.success(SuccessCode.OAUTH2_200_001, userInfo.getEmail()).toString());
-            }
-
-            return new CustomOAuth2User(oauth2User, registrationId);
-
-        } catch (CustomException e) {
-            throw e; // GlobalResponseHandler에서 처리
-        } catch (Exception e) {
-            log.error("[OAuth2 인증 오류] {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.AUTH_500_001, "OAuth2 사용자 정보 처리 중 오류가 발생했습니다.");
+        // 사용자 정보 파싱
+        OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(registrationId, oauth2User.getAttributes());
+        if (userInfo == null) {
+            throw new CustomException(ErrorCode.AUTH_401_008, "지원하지 않는 OAuth2 Provider: " + registrationId);
         }
+
+        // 사용자 저장/업데이트
+        boolean isNewUser = saveOrUpdateUser(userInfo, registrationId);
+
+        // 성공 로그 출력
+        SuccessCode successCode = isNewUser ? SuccessCode.OAUTH2_201_001 : SuccessCode.OAUTH2_200_001;
+        log.info(ApiResponseDTO.success(successCode, userInfo.getEmail()).toString());
+
+        return new CustomOAuth2User(oauth2User, registrationId);
     }
 
-    /**
-     * DefaultOAuth2UserService 사용하여 사용자 정보 가져오기
-     */
-    private OAuth2User getOAuth2User(OAuth2UserRequest userRequest) {
-        try {
-            return new DefaultOAuth2UserService().loadUser(userRequest);
-        } catch (Exception e) {
-            throw new CustomException(ErrorCode.AUTH_401_007, "OAuth2 사용자 정보를 가져올 수 없습니다.");
-        }
-    }
-
-    /**
-     * 기존 사용자 업데이트 또는 신규 사용자 생성
-     * @return true: 신규 사용자, false: 기존 사용자 업데이트
-     */
     private boolean saveOrUpdateUser(OAuth2UserInfo userInfo, String registrationId) {
         return userRepository.findBySocialId(userInfo.getId())
                 .map(user -> {
                     user.updateOAuthUser(userInfo.getName(), userInfo.getEmail(), registrationId, userInfo.getId());
                     userRepository.save(user);
-                    return false; // 기존 사용자
+                    return false;
                 })
                 .orElseGet(() -> {
                     userRepository.save(createNewUser(userInfo, registrationId));
-                    return true; // 신규 사용자
+                    return true;
                 });
     }
 
-    /**
-     * 신규 사용자 생성
-     */
     private User createNewUser(OAuth2UserInfo userInfo, String registrationId) {
         return User.builder()
                 .username(userInfo.getName())
@@ -103,9 +74,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .build();
     }
 
-    /**
-     * 외부에서 OAuth2UserInfo로 사용자 가져오기
-     */
     public User getUserByOAuth2UserInfo(OAuth2UserInfo userInfo, String registrationId) {
         return userRepository.findBySocialId(userInfo.getId())
                 .orElseGet(() -> createNewUser(userInfo, registrationId));
