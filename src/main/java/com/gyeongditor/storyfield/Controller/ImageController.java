@@ -4,6 +4,8 @@ import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestPart;
 
 @Tag(name = "Image", description = "이미지")
 @RestController
@@ -56,11 +60,17 @@ public class ImageController {
             @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
             @ApiResponse(responseCode = "500", description = "업로드 실패")
     })
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponseDTO<String> uploadImage(
-            @Parameter(description = "업로드할 이미지 파일", required = true)
+            @Parameter(
+                    description = "업로드할 이미지 파일",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(type = "string", format = "binary")
+                    )
+            )
             @RequestParam("file") MultipartFile file,
-
             @Parameter(description = "Bearer AccessToken", required = true)
             @RequestHeader("Authorization") String authorizationHeader
     ) {
