@@ -53,4 +53,4 @@ jobs:
             NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
             NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
             S3_ACCESSKEY=${{ secrets.S3_ACCESSKEY }}
-            S3_SECRET=${{ secrets.S3_SECRETKEY }}
+            S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
