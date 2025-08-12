@@ -1,5 +1,6 @@
-package seungil.login_boilerplate.dto;
+package com.gyeongditor.storyfield.dto.UserDTO;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.util.UUID;
@@ -8,14 +9,11 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "유저 응답 DTO")
 public class UserResponseDTO {
 
-    private UUID id;
+    @Schema(description = "사용자 이메일", example = "user@example.com")
     private String email;
-    private String userName;
-
-    public UserResponseDTO(String email, String userName) {
-        this.email = email;
-        this.userName = userName;
-    }
+    @Schema(description = "사용자 이름", example = "홍길동")
+    private String username;
 }

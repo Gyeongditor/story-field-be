@@ -1,17 +1,21 @@
 package com.gyeongditor.storyfield.Controller;
 
+import com.gyeongditor.storyfield.dto.UserDTO.SignUpDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
+import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import seungil.login_boilerplate.dto.SignUpDTO;
 
-
-import java.util.UUID;
-
+@Tag(name = "User", description = "사용자")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -19,56 +23,73 @@ public class UserController {
 
     private final UserService userService;
 
-    // 회원 가입
+    @Operation(summary = "회원가입", description = "신규 유저를 등록합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일"),
+            @ApiResponse(responseCode = "400", description = "입력값 유효성 실패")
+    })
     @PostMapping("/signup")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO) {
-        seungil.login_boilerplate.dto.UserResponseDTO userResponseDTO = userService.signUp(signUpDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userResponseDTO);
+    public ApiResponseDTO<UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO) {
+        return userService.signUp(signUpDTO);
     }
 
-    // 회원 정보 조회
-    @GetMapping("/{userId}")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> getUser(@PathVariable UUID userId) {
-        try {
-            seungil.login_boilerplate.dto.UserResponseDTO userResponseDTO = userService.getUserById(userId);
-            return ResponseEntity.ok(userResponseDTO);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    @Operation(
+            summary = "회원 정보 조회",
+            description = "AccessToken을 기반으로 로그인한 사용자의 정보를 조회합니다.",
+            parameters = {
+                    @Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)
+            }
+    )
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @GetMapping("/me")
+    public ApiResponseDTO<UserResponseDTO> getUser(
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        String accessToken = authorizationHeader.replace("Bearer ", "");
+        return userService.getUserByAccessToken(accessToken);
     }
 
-    // 회원 정보 수정
-    @PutMapping("/{userId}")
-    public ResponseEntity<seungil.login_boilerplate.dto.UserResponseDTO> updateUser(@PathVariable UUID userId, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
-        try {
-            seungil.login_boilerplate.dto.UserResponseDTO updatedUser = userService.updateUser(userId, updateUserDTO);
-            return ResponseEntity.ok(updatedUser);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+    @Operation(
+            summary = "회원 정보 수정",
+            description = "AccessToken을 기반으로 로그인한 사용자의 정보를 수정합니다.",
+            parameters = {
+                    @Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)
+            }
+    )
+    @ApiResponse(responseCode = "200", description = "수정 성공")
+    @PutMapping("/me")
+    public ApiResponseDTO<UserResponseDTO> updateUser(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody UpdateUserDTO updateUserDTO
+    ) {
+        String accessToken = authorizationHeader.replace("Bearer ", "");
+        return userService.updateUserByAccessToken(accessToken, updateUserDTO);
     }
 
-    // 회원 삭제
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
-        try {
-            userService.deleteUser(userId);
-            return ResponseEntity.noContent().build(); // 204 No Content
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "AccessToken을 기반으로 로그인한 사용자의 계정을 삭제합니다.",
+            parameters = {
+                    @Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)
+            }
+    )
+    @ApiResponse(responseCode = "204", description = "삭제 성공")
+    @DeleteMapping("/me")
+    public ApiResponseDTO<Void> deleteUser(
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        String accessToken = authorizationHeader.replace("Bearer ", "");
+        return userService.deleteUserByAccessToken(accessToken);
     }
-    // 이메일 인증
+
+    @Operation(summary = "이메일 인증", description = "회원가입 또는 정보 수정 시 이메일에 전달된 인증 링크를 통해 계정을 활성화합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "인증 성공"),
+            @ApiResponse(responseCode = "404", description = "토큰에 해당하는 사용자를 찾을 수 없음")
+    })
     @GetMapping("/verify/{token}")
-    public ResponseEntity<String> verifyEmail(@PathVariable String token) {
-        try {
-            userService.verifyEmail(token);  // 성공 시 내부적으로 상태 저장 처리
-            return ResponseEntity.ok("이메일 인증이 완료되었습니다.");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body("유효하지 않은 토큰입니다.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
-        }
+    public ApiResponseDTO<UserResponseDTO> verifyEmail(@PathVariable String token) {
+        return userService.verifyEmail(token);
     }
-
 }

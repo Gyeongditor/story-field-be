@@ -1,16 +1,22 @@
 package com.gyeongditor.storyfield.service;
 
-
 import com.gyeongditor.storyfield.Entity.CustomUserDetails;
+import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
+import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
+import com.gyeongditor.storyfield.dto.ApiResponseDTO;
+import com.gyeongditor.storyfield.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -19,40 +25,52 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
 
-    public HttpHeaders login(String email, String password) {
-        try {
-            // 인증 수행
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, password));
+    /**
+     * 로그인 처리
+     */
+    public ApiResponseDTO<HttpHeaders> login(String email, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password)
+        );
 
-            // 토큰 생성
-            String accessToken = jwtTokenProvider.createToken(authentication);
-            String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-            String uuid = ((CustomUserDetails) authentication.getPrincipal()).getId().toString();
+        String accessToken = jwtTokenProvider.createToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String uuid = ((CustomUserDetails) authentication.getPrincipal()).getUserId().toString();
 
-            userDetailsService.processSuccessfulLogin(email);
+        // 로그인 성공 → 실패 횟수 초기화
+        userDetailsService.processSuccessfulLogin(email);
 
-            // 헤더 설정
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-            headers.add("Refresh-Token", refreshToken);
-            headers.add("userUUID", uuid);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        headers.add("Refresh-Token", refreshToken);
+        headers.add("userUUID", uuid);
 
-            return headers;
-        } catch (AuthenticationException e) {
-            // 로그인 실패 처리
-            userDetailsService.handleAccountStatus(email);
-            userDetailsService.processFailedLogin(email);
-            // 예외를 던짐
-            throw e;
-        }
-    }
-    public int getRemainingLoginAttempts(String email) {
-        return userDetailsService.getRemainingLoginAttempts(email);
+        return ApiResponseDTO.success(SuccessCode.AUTH_200_001, headers);
     }
 
-    // Refresh 토큰을 블랙리스트에 추가하고, 성공적으로 추가되면 true를 반환한다.
-    public boolean logout(String token) {
-        return jwtTokenProvider.blacklistRefreshToken(token);
+    /**
+     * 로그인 실패 처리 (AuthenticationException 전용 핸들러에서 호출)
+     */
+    public void handleLoginFailure(String email) {
+        // 계정 상태 확인
+        userDetailsService.handleAccountStatus(email);
+
+        // 실패 횟수 증가
+        userDetailsService.processFailedLogin(email);
+        int remaining = userDetailsService.getRemainingLoginAttempts(email);
+
+        throw new CustomException(
+                ErrorCode.AUTH_401_009,
+                "이메일 또는 비밀번호가 올바르지 않습니다. 앞으로 " + remaining + "번 실패 시 계정이 잠깁니다."
+        );
+    }
+
+    /**
+     * 로그아웃
+     */
+    public ApiResponseDTO<String> logout(String refreshToken) {
+        jwtTokenProvider.blacklistRefreshTokenOrThrow(refreshToken);
+        return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
 }
+
