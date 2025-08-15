@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;   // Swagger 전용
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,5 +57,24 @@ public class AuthController {
     @DeleteMapping("/logout")
     public ApiResponseDTO<String> logout(@RequestHeader(name = "Refresh-Token") String refreshToken) {
         return authService.logout(refreshToken);
+    }
+
+    /**
+     * AccessToken 재발급
+     */
+    @Operation(summary = "AccessToken 재발급", description = "쿠키에 저장된 RefreshToken을 이용하여 AccessToken을 재발급합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "재발급 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "RefreshToken이 없거나 유효하지 않음"),
+            @ApiResponse(responseCode = "403", description = "RefreshToken이 블랙리스트에 등록됨"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/reissue")
+    public ApiResponseDTO<Map<String, String>> reissueAccessToken(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        return authService.reissueAccessToken(request, response);
     }
 }

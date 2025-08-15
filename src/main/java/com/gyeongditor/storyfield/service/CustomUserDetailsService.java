@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -116,5 +117,15 @@ public class CustomUserDetailsService implements UserDetailsService {
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_404_002));
+    }
+
+    public CustomUserDetails loadUserByUUID(String uuid) {
+        User user = userRepository.findById(UUID.fromString(uuid))
+                .orElseThrow(() -> new CustomException(
+                        ErrorCode.USER_404_001,
+                        "사용자를 찾을 수 없습니다."
+                ));
+
+        return new CustomUserDetails(user);
     }
 }

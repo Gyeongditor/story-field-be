@@ -7,6 +7,8 @@ import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,11 +100,98 @@ public class AuthService {
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
 
-//    /**
-//    * RT로 AT 재발급
-//     */
-//    public ApiResponseDTO<>
+    /**
+     * RefreshToken으로 AccessToken 재발급
+     */
+    public ApiResponseDTO<Map<String, String>> reissueAccessToken(HttpServletRequest request,
+                                                                  HttpServletResponse response) {
 
+        // 1) RefreshToken 추출(쿠키)
+        String refreshToken = extractRefreshTokenFromCookie(request);
 
+        // 2) Redis에서 RefreshToken 검증(존재 여부, 만료 여부)
+        String uuid = validateRefreshTokenWithRedis(refreshToken);
+
+        // 3) 유효하면 Authentication 생성 (로그인 방식)
+        Authentication auth = createAuthenticationFromUUID(uuid);
+
+        // 4) Rotation 정책 적용 시 새 RefreshToken 발급 후 Redis 갱신
+        handleRotationPolicy(auth, uuid, response);
+
+        // 5) AccessToken 발급
+        String newAccessToken = jwtTokenProvider.createToken(auth);
+
+        // 6) 응답 헤더에 AT, UUID 추가
+        addAccessTokenHeaders(response, newAccessToken, uuid);
+
+        // 7) 응답 바디 반환
+        Map<String, String> data = Map.of(
+                "accessToken", newAccessToken,
+                "userUUID", uuid
+        );
+        return ApiResponseDTO.success(SuccessCode.AUTH_200_007, data);
+    }
+
+    /** 1) 쿠키에서 RT 추출 */
+    private String extractRefreshTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        throw new CustomException(ErrorCode.AUTH_401_003, "RefreshToken이 존재하지 않습니다.");
+    }
+
+    /** 2) Redis에서 RT 검증 */
+    private String validateRefreshTokenWithRedis(String refreshToken) {
+        String email = jwtTokenProvider.getEmail(refreshToken);
+        CustomUserDetails userDetails =
+                (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+        String uuid = userDetails.getUserId().toString();
+
+        String storedRT = jwtTokenRedisRepository.getRefreshToken(uuid);
+        if (storedRT == null) {
+            throw new CustomException(ErrorCode.AUTH_401_005, "RefreshToken이 만료되었거나 존재하지 않습니다.");
+        }
+        if (!storedRT.equals(refreshToken)) {
+            throw new CustomException(ErrorCode.AUTH_401_004, "RefreshToken이 유효하지 않습니다.");
+        }
+        return uuid;
+    }
+
+    /** 3) uuid로 Authentication 생성 (로그인 방식 재사용) */
+    private Authentication createAuthenticationFromUUID(String uuid) {
+        CustomUserDetails userDetails =
+                (CustomUserDetails) userDetailsService.loadUserByUUID(uuid);
+        return new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+    }
+
+    /** 4) Rotation 정책 적용 */
+    private void handleRotationPolicy(Authentication auth, String uuid, HttpServletResponse response) {
+        boolean rotationEnabled = true; // yml로 뺄 수 있음
+        if (rotationEnabled) {
+            String newRT = jwtTokenProvider.createRefreshToken(auth);
+            jwtTokenRedisRepository.saveRefreshToken(uuid, newRT,
+                    jwtTokenProvider.getRefreshTokenValiditySeconds());
+
+            ResponseCookie rtCookie = ResponseCookie.from("refreshToken", newRT)
+                    .httpOnly(true)
+                    .secure(true)
+                    .sameSite("Strict")
+                    .path("/")
+                    .maxAge(Duration.ofSeconds(jwtTokenProvider.getRefreshTokenValiditySeconds()))
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, rtCookie.toString());
+        }
+    }
+
+    /** 6) 응답 헤더에 AT, UUID 추가 */
+    private void addAccessTokenHeaders(HttpServletResponse response, String accessToken, String uuid) {
+        response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        response.addHeader("userUUID", uuid);
+    }
 }
 
