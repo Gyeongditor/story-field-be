@@ -6,15 +6,19 @@ import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
-import com.gyeongditor.storyfield.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,7 +32,8 @@ public class AuthService {
     /**
      * 로그인 처리
      */
-    public ApiResponseDTO<HttpHeaders> login(String email, String password) {
+    public ApiResponseDTO<Map<String, String>> login(String email, String password, HttpServletResponse response) {
+        // 1) 인증 처리
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
         );
@@ -37,15 +42,27 @@ public class AuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
         String uuid = ((CustomUserDetails) authentication.getPrincipal()).getUserId().toString();
 
-        // 로그인 성공 → 실패 횟수 초기화
+        // 2) 로그인 성공 → 실패 횟수 초기화
         userDetailsService.processSuccessfulLogin(email);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        headers.add("Refresh-Token", refreshToken);
-        headers.add("userUUID", uuid);
+        // 3) HttpOnly 쿠키에 RT 저장
+        ResponseCookie rtCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true) // HTTPS 환경 필수
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofHours(14))
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, rtCookie.toString());
+        response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        response.addHeader("userUUID", uuid);
 
-        return ApiResponseDTO.success(SuccessCode.AUTH_200_001, headers);
+        // 4) data에 AT와 userUUID만 담기
+        Map<String, String> data = new HashMap<>();
+        data.put("로그인 상태", "성공");
+
+        // 5) ApiResponseDTO로 반환
+        return ApiResponseDTO.success(SuccessCode.AUTH_200_001, data);
     }
 
     /**
@@ -72,5 +89,12 @@ public class AuthService {
         jwtTokenProvider.blacklistRefreshTokenOrThrow(refreshToken);
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
+
+//    /**
+//    * RT로 AT 재발급
+//     */
+//    public ApiResponseDTO<>
+
+
 }
 
