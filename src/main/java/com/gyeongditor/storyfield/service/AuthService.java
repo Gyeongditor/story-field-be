@@ -125,10 +125,8 @@ public class AuthService {
         addAccessTokenHeaders(response, newAccessToken, uuid);
 
         // 7) 응답 바디 반환
-        Map<String, String> data = Map.of(
-                "accessToken", newAccessToken,
-                "userUUID", uuid
-        );
+        Map<String, String> data = new HashMap<>();
+        data.put("로그인 상태", "성공");
         return ApiResponseDTO.success(SuccessCode.AUTH_200_007, data);
     }
 
