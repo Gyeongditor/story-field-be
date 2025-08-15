@@ -29,7 +29,7 @@ public class JwtTokenProvider {
     private long accessTokenValiditySeconds;
 
     @Value("${jwt.refresh-token-validity-in-seconds}")
-    private long refreshTokenValiditySeconds;
+    public long refreshTokenValiditySeconds;
 
     private final JwtTokenRedisRepository jwtTokenRedisRepository;
     private final UserDetailsService userDetailsService;

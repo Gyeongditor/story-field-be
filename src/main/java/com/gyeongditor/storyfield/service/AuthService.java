@@ -3,6 +3,7 @@ package com.gyeongditor.storyfield.service;
 import com.gyeongditor.storyfield.Entity.CustomUserDetails;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
+import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
@@ -28,6 +29,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final JwtTokenRedisRepository jwtTokenRedisRepository;
 
     /**
      * 로그인 처리
@@ -45,23 +47,29 @@ public class AuthService {
         // 2) 로그인 성공 → 실패 횟수 초기화
         userDetailsService.processSuccessfulLogin(email);
 
-        // 3) HttpOnly 쿠키에 RT 저장
+        // 3) Redis에 RefreshToken 저장
+        // refreshTokenValiditySeconds는 JwtTokenProvider에서 @Value로 받은 값 사용
+        jwtTokenRedisRepository.saveRefreshToken(uuid, refreshToken, jwtTokenProvider.refreshTokenValiditySeconds);
+
+        // 4) HttpOnly 쿠키에 RT 저장
         ResponseCookie rtCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(true) // HTTPS 환경 필수
                 .sameSite("Strict")
                 .path("/")
-                .maxAge(Duration.ofHours(14))
+                .maxAge(Duration.ofSeconds(jwtTokenProvider.refreshTokenValiditySeconds))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, rtCookie.toString());
+
+        // 5) 응답 헤더에 AT, UUID 추가
         response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         response.addHeader("userUUID", uuid);
 
-        // 4) data에 AT와 userUUID만 담기
+        // 6) data에 로그인 상태만 담기 (또는 필요 시 AT·UUID 추가 가능)
         Map<String, String> data = new HashMap<>();
         data.put("로그인 상태", "성공");
 
-        // 5) ApiResponseDTO로 반환
+        // 7) ApiResponseDTO로 반환
         return ApiResponseDTO.success(SuccessCode.AUTH_200_001, data);
     }
 
