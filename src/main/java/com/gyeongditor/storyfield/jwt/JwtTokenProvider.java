@@ -142,19 +142,30 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 블랙리스트 처리
+     * AccessToken & RefreshToken 무효화 처리
      */
-    public void blacklistRefreshTokenOrThrow(String refreshToken) {
-        Claims claims = parseClaims(refreshToken);
-        String tokenId = claims.getId();
+    public void invalidateTokensOrThrow(String accessToken, String refreshToken) {
+        // 1. RefreshToken 삭제
+        Claims refreshClaims = parseClaims(refreshToken);
+        String userUUID = refreshClaims.getSubject();
+        if (userUUID == null) {
+            throw new CustomException(ErrorCode.AUTH_401_007, "RefreshToken에 sub 클레임(사용자 식별자)이 없습니다.");
+        }
+        jwtTokenRedisRepository.deleteRefreshToken(userUUID);
 
-        if (tokenId == null) {
-            throw new CustomException(ErrorCode.AUTH_401_007, "토큰에 jti 클레임이 없습니다.");
+        // 2. AccessToken 블랙리스트 처리 (30분 TTL)
+        Claims accessClaims = parseClaims(accessToken);
+        String accessJti = accessClaims.getId();
+        if (accessJti == null) {
+            throw new CustomException(ErrorCode.AUTH_401_007, "AccessToken에 jti 클레임이 없습니다.");
         }
 
-        boolean success = jwtTokenRedisRepository.addTokenToBlacklist(tokenId, refreshTokenValiditySeconds);
+        // TTL 고정: 30분 (1800초)
+        long ttlSeconds = 30 * 60;
+
+        boolean success = jwtTokenRedisRepository.addTokenToBlacklist(accessJti, ttlSeconds);
         if (!success) {
-            throw new CustomException(ErrorCode.SERVER_500_001, "토큰 블랙리스트 등록 실패");
+            throw new CustomException(ErrorCode.SERVER_500_001, "AccessToken 블랙리스트 등록 실패");
         }
     }
 
