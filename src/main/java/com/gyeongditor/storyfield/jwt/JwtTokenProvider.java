@@ -52,7 +52,9 @@ public class JwtTokenProvider {
 
     private String generateToken(Authentication authentication, long validitySeconds) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Claims claims = Jwts.claims().setSubject(userDetails.getEmail());
+
+        Claims claims = Jwts.claims().setSubject(userDetails.getEmail()); // sub = email
+        claims.put("userUUID", userDetails.getUserId().toString());       // 🔑 uuid 별도 claim 추가
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validitySeconds * 1000);
@@ -67,6 +69,7 @@ public class JwtTokenProvider {
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
     }
+
 
     /**
      * 토큰 유효성 검사 실패 시 예외 발생
@@ -147,9 +150,9 @@ public class JwtTokenProvider {
     public void invalidateTokensOrThrow(String accessToken, String refreshToken) {
         // 1. RefreshToken 삭제
         Claims refreshClaims = parseClaims(refreshToken);
-        String userUUID = refreshClaims.getSubject();
+        String userUUID = (String) refreshClaims.get("userUUID"); // ✅ 여기서 uuid 추출
         if (userUUID == null) {
-            throw new CustomException(ErrorCode.AUTH_401_007, "RefreshToken에 sub 클레임(사용자 식별자)이 없습니다.");
+            throw new CustomException(ErrorCode.AUTH_401_007, "RefreshToken에 userUUID 클레임이 없습니다.");
         }
         jwtTokenRedisRepository.deleteRefreshToken(userUUID);
 
@@ -160,9 +163,7 @@ public class JwtTokenProvider {
             throw new CustomException(ErrorCode.AUTH_401_007, "AccessToken에 jti 클레임이 없습니다.");
         }
 
-        // TTL 고정: 30분 (1800초)
         long ttlSeconds = 30 * 60;
-
         boolean success = jwtTokenRedisRepository.addTokenToBlacklist(accessJti, ttlSeconds);
         if (!success) {
             throw new CustomException(ErrorCode.SERVER_500_001, "AccessToken 블랙리스트 등록 실패");
