@@ -49,7 +49,7 @@ public class StoryService {
                 .map(pageDto -> StoryPage.builder()
                         .pageNumber(pageDto.getPageNumber())
                         .content(pageDto.getContent())
-                        .imageUrl(pageDto.getImageUrl())
+                        .imageFileName(pageDto.getImageFileName())
                         .story(story)
                         .build())
                 .toList();
@@ -71,7 +71,7 @@ public class StoryService {
                 .map(page -> StoryPageResponseDTO.builder()
                         .pageNumber(page.getPageNumber())
                         .content(page.getContent())
-                        .imageUrl(page.getImageUrl())
+                        .imageFileName(page.getImageFileName())
                         .build())
                 .toList();
 
@@ -90,7 +90,7 @@ public class StoryService {
                     String thumbnail = story.getPages().stream()
                             .filter(p -> p.getPageNumber() == 3)
                             .findFirst()
-                            .map(StoryPage::getImageUrl)
+                            .map(StoryPage::getImageFileName)
                             .orElse(null);
 
                     return StoryThumbnailResponseDTO.builder()
