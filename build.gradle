@@ -62,6 +62,22 @@ dependencies {
 
 	// S3
 	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
+
+    // WebClient
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Resilience4j
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'io.github.resilience4j:resilience4j-reactor'
+
+    // Observability
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
+    // Jackson JSR310 (LocalDateTime 지원)
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
 	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
