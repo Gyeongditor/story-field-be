@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   ai-review:
-    # Org 공용 워크플로 호출 (버전 핀 고정 권장: @v1)
+    # Org 공용 워크플로 호출
     uses: Gyeongditor/.github/.github/workflows/ai-pr-review.yml@main
     secrets: inherit
     with:
