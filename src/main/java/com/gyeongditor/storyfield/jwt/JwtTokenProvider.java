@@ -136,7 +136,7 @@ public class JwtTokenProvider {
     /**
      * 토큰 파싱
      */
-    private Claims parseClaims(String token) {
+    public Claims parseClaims(String token) {
         try {
             return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
         } catch (Exception e) {
