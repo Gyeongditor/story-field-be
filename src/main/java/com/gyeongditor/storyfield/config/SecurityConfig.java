@@ -4,6 +4,7 @@ import com.gyeongditor.storyfield.jwt.JwtAuthenticationFilter;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.oauth.handler.OAuth2LoginFailureHandler;
 import com.gyeongditor.storyfield.oauth.handler.OAuth2LoginSuccessHandler;
+import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
 import com.gyeongditor.storyfield.service.CustomOAuth2UserService;
 import com.gyeongditor.storyfield.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,8 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oauth2LoginFailureHandler;
+    private final JwtTokenRedisRepository jwtTokenRedisRepository;
+
     @Bean // 비밀번호 암호화를 위한 PasswordEncoder 빈 생성
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -58,8 +61,7 @@ public class SecurityConfig {
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 // JWT 인증 필터 추가
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider,
-                        customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, jwtTokenRedisRepository), UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .failureHandler(oauth2LoginFailureHandler)
