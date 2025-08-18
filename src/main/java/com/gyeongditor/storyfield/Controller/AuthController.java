@@ -20,7 +20,7 @@ import java.util.Map;
 
 @Tag(name = "Auth", description = "인증")
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 

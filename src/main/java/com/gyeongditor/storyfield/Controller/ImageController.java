@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 @Tag(name = "Image", description = "이미지")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/images")
+@RequestMapping("/api/images")
 public class ImageController {
 
     private final S3Service s3Service;
