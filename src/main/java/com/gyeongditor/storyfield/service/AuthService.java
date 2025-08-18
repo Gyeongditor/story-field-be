@@ -96,9 +96,28 @@ public class AuthService {
      * 로그아웃 (RT 삭제 + AT 폐기)
      */
     public ApiResponseDTO<String> logout(String accessToken, String refreshToken) {
-        jwtTokenProvider.invalidateTokensOrThrow(accessToken, refreshToken);
+        // 1. 헤더에서 넘어온 Authorization 파싱 ("Bearer " 제거)
+        String pureAccessToken = extractToken(accessToken);
+
+        // 2. Provider 호출
+        jwtTokenProvider.invalidateTokensOrThrow(pureAccessToken, refreshToken);
+
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
+
+    /**
+     * Authorization 헤더에서 실제 토큰 문자열만 추출
+     */
+    private String extractToken(String bearerToken) {
+        if (bearerToken == null || bearerToken.isBlank()) {
+            throw new CustomException(ErrorCode.AUTH_401_004, "Authorization 헤더가 비어있습니다.");
+        }
+        if (bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return bearerToken; // Bearer 접두어가 없는 경우 그대로 반환
+    }
+
     /**
      * RefreshToken으로 AccessToken 재발급
      */
