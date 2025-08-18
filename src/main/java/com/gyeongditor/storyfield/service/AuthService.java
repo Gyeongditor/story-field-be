@@ -93,13 +93,12 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃
+     * 로그아웃 (RT 삭제 + AT 폐기)
      */
-    public ApiResponseDTO<String> logout(String refreshToken) {
-        jwtTokenProvider.blacklistRefreshTokenOrThrow(refreshToken);
+    public ApiResponseDTO<String> logout(String accessToken, String refreshToken) {
+        jwtTokenProvider.invalidateTokensOrThrow(accessToken, refreshToken);
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
-
     /**
      * RefreshToken으로 AccessToken 재발급
      */

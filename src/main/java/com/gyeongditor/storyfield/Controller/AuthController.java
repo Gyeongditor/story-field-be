@@ -55,8 +55,9 @@ public class AuthController {
             @ApiResponse(responseCode = "500", description = "로그아웃 처리 중 서버 오류")
     })
     @DeleteMapping("/logout")
-    public ApiResponseDTO<String> logout(@RequestHeader(name = "Refresh-Token") String refreshToken) {
-        return authService.logout(refreshToken);
+    public ApiResponseDTO<String> logout(@RequestHeader("Authorization") String accessToken,
+                                         @RequestHeader(name = "Refresh-Token") String refreshToken) {
+        return authService.logout(accessToken, refreshToken);
     }
 
     /**
