@@ -19,7 +19,7 @@ public class HealthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "서버 정상 동작")
     })
-    @GetMapping("/health/ping")
+    @GetMapping("/ping")
     public ApiResponseDTO<String> ping() {
         return ApiResponseDTO.success(SuccessCode.SUCCESS_200_001, "OK");
     }
