@@ -225,9 +225,7 @@ public class ImageController {
               "message": "파일 URL 조회 실패",
               "data": null
             }
-            """)
-                    )
-            )
+            """)))
     })
     @GetMapping("/{fileName}")
     public ApiResponseDTO<String> getImageUrl(
