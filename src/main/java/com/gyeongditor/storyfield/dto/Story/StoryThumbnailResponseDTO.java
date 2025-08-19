@@ -19,6 +19,6 @@ public class StoryThumbnailResponseDTO {
     @Schema(description = "스토리 제목", example = "용감한 병아리의 모험")
     private String storyTitle;
 
-    @Schema(description = "썸네일 이미지 URL (4번 페이지 기준)", example = "https://example.com/image4.png")
+    @Schema(description = "썸네일 이미지 URL (3번 페이지 기준)", example = "https://example.com/image3.png")
     private String thumbnailUrl;
 }
