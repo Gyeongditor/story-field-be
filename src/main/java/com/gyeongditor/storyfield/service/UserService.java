@@ -110,7 +110,7 @@ public class UserService {
     }
 
     private void sendEmail(String email, String verificationToken, String subject) {
-        String url = "http://localhost:9080/users/verify/" + verificationToken;
+        String url = "http://localhost:9080/api/user/verify/" + verificationToken;
         mailService.sendEmail(email, url, subject);
     }
 
