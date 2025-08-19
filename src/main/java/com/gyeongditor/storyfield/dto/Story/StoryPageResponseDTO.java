@@ -17,6 +17,10 @@ public class StoryPageResponseDTO {
     @Schema(description = "페이지 내용", example = "옛날 옛적에 병아리가 있었습니다.")
     private String content;
 
-    @Schema(description = "이미지 URL", example = "https://example.com/images/page1.png")
-    private String imageUrl;
+    @Schema(description = "이미지 파일명", example = "xxx.png")
+    private String imageFileName;
+
+    @Schema(description = "이미지 presignedUrl", example = "S3.xxx.xxx")
+    private String presignedUrl;    // 서비스 로직에서 추가해서 내려줌
+
 }

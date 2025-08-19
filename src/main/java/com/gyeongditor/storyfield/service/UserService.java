@@ -97,7 +97,7 @@ public class UserService {
     }
 
     // ───────────────────── 내부 유틸 ─────────────────────
-    private User getUserFromToken(String token) {
+    public User getUserFromToken(String token) {
         jwtTokenProvider.validateOrThrow(token); // 유효성 검사 → 실패 시 예외
         String email = jwtTokenProvider.getEmail(token); // 이메일 추출
 

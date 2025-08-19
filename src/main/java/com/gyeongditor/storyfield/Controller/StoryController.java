@@ -1,45 +1,51 @@
 package com.gyeongditor.storyfield.Controller;
 
-import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
+import com.gyeongditor.storyfield.dto.Story.SavePageRequest;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.StoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Story", description = "동화")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/stories")
+@RequestMapping("/api/stories")
 public class StoryController {
 
     private final StoryService storyService;
 
-    @Operation(summary = "스토리 저장", description = "accessToken 기반으로 사용자 인증 후 스토리를 저장합니다.",
+    @Operation(summary = "스토리 페이지 저장", description = "FastAPI가 생성한 스토리 페이지 데이터를 저장합니다.",
             parameters = {
                     @Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)
             })
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "스토리 생성 성공"),
-            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+            @ApiResponse(responseCode = "201", description = "스토리 페이지 저장 성공"),
+            @ApiResponse(responseCode = "404", description = "스토리를 찾을 수 없음")
     })
-    @PostMapping
-    public ApiResponseDTO<String> saveStory(
+    @PostMapping(value = "/{storyId}/pages", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponseDTO<String> saveStoryPagesFromFastApi(
             @RequestHeader("Authorization") String accessToken,
-            @Valid @RequestBody SaveStoryDTO dto) {
-        return storyService.saveStory(accessToken.replace("Bearer ", ""), dto);
+            @PathVariable UUID storyId,
+            @RequestPart("pages") List<SavePageRequest> pages,
+            @RequestPart("files") List<MultipartFile> files
+    ) throws IOException {
+        return storyService.saveStoryPagesFromFastApi(accessToken.replace("Bearer ", ""), storyId, pages, files
+        );
     }
+
 
     @Operation(summary = "스토리 페이지 조회", description = "스토리 ID에 해당하는 전체 페이지 조회")
     @ApiResponses({
