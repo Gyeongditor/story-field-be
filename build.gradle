@@ -1,72 +1,72 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.3.13'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.3.13'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.gyeongditor'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	// Jakarta Servlet API (Spring Boot 3.x 필수)
-	compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    // Jakarta Servlet API (Spring Boot 3.x 필수)
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 
-	// Spring Boot 스타터들
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // Spring Boot 스타터들
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-	// ✅ JavaMailSender
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
+    // ✅ JavaMailSender
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    // ✅ Redis (Lettuce 클라이언트 사용)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'io.lettuce:lettuce-core:6.2.6.RELEASE' // Spring Boot 3.3.13 기준
 
-	// ✅ Redis (Lettuce 클라이언트 사용)
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'io.lettuce:lettuce-core:6.2.6.RELEASE' // Spring Boot 3.3.13 기준
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-	// JWT
-	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    // DB
+    runtimeOnly 'com.mysql:mysql-connector-j'
 
-	// DB
-	runtimeOnly 'com.mysql:mysql-connector-j'
+    // Docker Compose (개발용)
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
-	// Docker Compose (개발용)
-	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+    // Swagger UI & OpenAPI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
-	// Swagger UI & OpenAPI
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-
-	// S3
-	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
+    // S3
+    implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
 
     // WebClient
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    // Resilience4j
+    // ✅ Resilience4j (BOM 사용)
+    implementation platform("io.github.resilience4j:resilience4j-bom:2.2.0")
     implementation 'io.github.resilience4j:resilience4j-spring-boot3'
     implementation 'io.github.resilience4j:resilience4j-reactor'
 
@@ -78,14 +78,13 @@ dependencies {
     // Jackson JSR310 (LocalDateTime 지원)
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
-	// 테스트
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation 'io.projectreactor:reactor-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // 테스트
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
