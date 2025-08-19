@@ -29,6 +29,7 @@ public enum SuccessCode {
     STORY_201_001(HttpStatus.CREATED, "STORY_201_001", "스토리가 성공적으로 생성되었습니다."),
     STORY_200_001(HttpStatus.OK, "STORY_200_001", "스토리 페이지가 성공적으로 조회되었습니다."),
     STORY_200_002(HttpStatus.OK, "STORY_200_002", "메인 페이지 스토리 목록이 성공적으로 조회되었습니다."),
+    STORY_200_003(HttpStatus.OK, "STORY_200_003", "스토리 생성 요청 완료"),
     STORY_204_001(HttpStatus.NO_CONTENT, "STORY_204_001", "스토리가 성공적으로 삭제되었습니다."),
     // 6. OAuth2 인증
     OAUTH2_200_001(HttpStatus.OK, "OAUTH2_200_001", "OAuth2 로그인 인증이 성공적으로 완료되었습니다."),
