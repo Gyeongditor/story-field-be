@@ -59,7 +59,7 @@ public class StoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "스토리 목록 조회 성공")
     })
-    @GetMapping("/thumbnails")
+    @GetMapping("/stories/main")
     public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(
             @RequestHeader("Authorization") String accessToken,
             @RequestParam(defaultValue = "0") int page) {
