@@ -1,0 +1,21 @@
+name: PR AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - develop   # develop으로 들어오는 PR만 리뷰
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    # Org 공용 워크플로 호출
+    uses: Gyeongditor/.github/.github/workflows/ai-pr-review.yml@main
+    secrets: inherit
+    with:
+      model: gpt-4.1-mini          # 기본은 mini
+      run_on_fork: false           # 포크 PR은 기본 미실행
+      max_patch_per_file: 4000
