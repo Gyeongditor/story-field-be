@@ -19,9 +19,10 @@ public class StoryPage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private int pageNumber;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     // presignedUrl 대신 S3에 업로드된 실제 파일 이름만 저장
