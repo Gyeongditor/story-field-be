@@ -114,9 +114,6 @@ public class StoryService {
     /**
      * 메인 페이지 스토리 목록 조회
      */
-    /**
-     * 메인 페이지 스토리 목록 조회
-     */
     public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page, String accessToken) {
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Story> storyPage = storyRepository.findAll(pageable);
