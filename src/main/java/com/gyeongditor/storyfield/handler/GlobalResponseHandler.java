@@ -46,7 +46,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     private final BusinessErrorMapper businessErrorMapper;
     private final FallbackErrorMapper fallbackErrorMapper;
 
-    // ====== 성공 응답 래핑 ======
+    // 성공 응답 래핑
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         // ResponseEntity는 제외
@@ -95,7 +95,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
         return ApiResponseDTO.success(success, body);
     }
 
-    // ====== 에러 응답 (중략: 이전에 분리해둔 매퍼 기반 처리 그대로 유지) ======
+    // 에러 응답 (중략: 이전에 분리해둔 매퍼 기반 처리 그대로 유지)
 
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ApiResponseDTO<Object>> onCustom(CustomException ex) {
