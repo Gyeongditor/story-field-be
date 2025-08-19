@@ -1,15 +1,10 @@
 package com.gyeongditor.storyfield.service;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.gyeongditor.storyfield.Entity.Story;
 import com.gyeongditor.storyfield.Entity.StoryPage;
 import com.gyeongditor.storyfield.Entity.User;
-import com.gyeongditor.storyfield.config.AwsProperties;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
-import com.gyeongditor.storyfield.dto.Story.SavePageRequest;
-import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
-import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
-import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
+import com.gyeongditor.storyfield.dto.Story.*;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.repository.StoryRepository;
@@ -23,9 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URL;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,57 +28,109 @@ public class StoryService {
     private final UserRepository userRepository;
     private final StoryRepository storyRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final AmazonS3 amazonS3;
-    private final AwsProperties awsProperties;
     private final S3Service s3Service;
     private final UserService userService;
 
     /**
-     * PresignedUrl 생성
+     * FastAPI 결과 저장
      */
-    private String generatePresignedUrl(String fileName) {
-        Date expiration = new Date(System.currentTimeMillis() + 600 * 1000); // 10분 유효
-        URL url = amazonS3.generatePresignedUrl(awsProperties.getBucket(), fileName, expiration);
-        return url.toString();
+    @Transactional
+    public ApiResponseDTO<String> saveStoryFromFastApi(
+            String accessToken,
+            SaveStoryDTO saveStoryDTO,
+            MultipartFile thumbnail,
+            List<MultipartFile> pageImages) throws IOException {
+
+        // 1. 토큰 검증
+        User user = userService.getUserFromToken(accessToken);
+
+        // 2. 새 Story 생성
+        Story.StoryBuilder storyBuilder = Story.builder()
+                .storyId(UUID.randomUUID())
+                .user(user)
+                .storyTitle(saveStoryDTO.getStoryTitle()); // ✅ AI가 넘겨준 제목
+
+        // 3. 썸네일 업로드 + UUID 붙이기
+        if (thumbnail != null && !thumbnail.isEmpty()) {
+            String thumbnailFileName = UUID.randomUUID() + "_" + saveStoryDTO.getThumbnailFileName();
+            s3Service.uploadFile(thumbnail, thumbnailFileName);
+
+            storyBuilder.thumbnailFileName(thumbnailFileName); // ✅ UUID 붙인 값 저장
+        }
+
+        Story story = storyBuilder.build();
+
+        // 4. 페이지 저장
+        List<StoryPageDTO> pages = saveStoryDTO.getPages();
+        for (int i = 0; i < pages.size(); i++) {
+            StoryPageDTO req = pages.get(i);
+            MultipartFile file = pageImages.get(i);
+
+            String fileName = UUID.randomUUID() + "_" + req.getImageFileName();
+            s3Service.uploadFile(file, fileName);
+
+            StoryPage page = StoryPage.builder()
+                    .story(story)
+                    .pageNumber(req.getPageNumber())
+                    .content(req.getContent())
+                    .imageFileName(fileName)
+                    .build();
+
+            story.getPages().add(page);
+        }
+
+        // 5. DB 저장
+        storyRepository.save(story);
+
+        return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");
     }
-
-
 
     /**
      * 스토리 페이지 조회
      */
-    public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(UUID storyId) {
+    public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(UUID storyId, String accessToken) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.STORY_404_001));
 
         List<StoryPageResponseDTO> pages = story.getPages().stream()
-                .map(page -> StoryPageResponseDTO.builder()
-                        .pageNumber(page.getPageNumber())
-                        .content(page.getContent())
-                        .imageFileName(page.getImageFileName())
-                        .presignedUrl(generatePresignedUrl(page.getImageFileName())) // ✅ presignedUrl 동적 생성
-                        .build())
+                .map(page -> {
+                    String presignedUrl = s3Service
+                            .generatePresignedUrl(page.getImageFileName(), accessToken) // ✅ S3Service 활용
+                            .getData(); // ApiResponseDTO<String> 에서 URL 꺼내기
+
+                    return StoryPageResponseDTO.builder()
+                            .pageNumber(page.getPageNumber())
+                            .content(page.getContent())
+                            .imageFileName(page.getImageFileName())
+                            .presignedUrl(presignedUrl)
+                            .build();
+                })
                 .toList();
 
         return ApiResponseDTO.success(SuccessCode.STORY_200_001, pages);
     }
 
+
     /**
      * 메인 페이지 스토리 목록 조회
      */
-    public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page) {
+    /**
+     * 메인 페이지 스토리 목록 조회
+     */
+    public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page, String accessToken) {
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Story> storyPage = storyRepository.findAll(pageable);
 
         List<StoryThumbnailResponseDTO> thumbnails = storyPage.getContent().stream()
                 .map(story -> {
-                    String thumbnailFile = story.getPages().stream()
-                            .filter(p -> p.getPageNumber() == 3)
-                            .findFirst()
-                            .map(StoryPage::getImageFileName)
-                            .orElse(null);
+                    String thumbnailFile = story.getThumbnailFileName(); // ✅ 엔티티 필드 활용
+                    String presignedThumbnail = null;
 
-                    String presignedThumbnail = thumbnailFile != null ? generatePresignedUrl(thumbnailFile) : null;
+                    if (thumbnailFile != null) {
+                        presignedThumbnail = s3Service
+                                .generatePresignedUrl(thumbnailFile, accessToken) // ✅ S3Service 통해 presignedUrl 발급
+                                .getData(); // ApiResponseDTO<String>에서 presignedUrl 꺼내기
+                    }
 
                     return StoryThumbnailResponseDTO.builder()
                             .storyId(story.getStoryId())
@@ -99,9 +143,8 @@ public class StoryService {
         return ApiResponseDTO.success(SuccessCode.STORY_200_002, thumbnails);
     }
 
-    /**
-     * 스토리 삭제
-     */
+
+    @Transactional
     public ApiResponseDTO<Void> deleteStory(String accessToken, UUID storyId) {
         String email = jwtTokenProvider.getEmail(accessToken);
 
@@ -115,42 +158,19 @@ public class StoryService {
             throw new CustomException(ErrorCode.STORY_403_001, "본인 스토리만 삭제할 수 있습니다.");
         }
 
+        // ✅ S3에서 썸네일 삭제
+        if (story.getThumbnailFileName() != null) {
+            s3Service.deleteFile(story.getThumbnailFileName(), accessToken);
+        }
+
+        // ✅ S3에서 페이지 이미지 삭제
+        story.getPages().forEach(page ->
+                s3Service.deleteFile(page.getImageFileName(), accessToken)
+        );
+
+        // ✅ DB에서 스토리 삭제 (cascade 로 Page도 같이 삭제될 것임)
         storyRepository.delete(story);
+
         return ApiResponseDTO.success(SuccessCode.STORY_204_001, null);
-    }
-
-    @Transactional
-    public ApiResponseDTO<String> saveStoryPagesFromFastApi(String accessToken, UUID storyId,
-                                                          List<SavePageRequest> pages, List<MultipartFile> files) throws IOException {
-        // 토큰 검증
-        User user = userService.getUserFromToken(accessToken);
-        Story story = storyRepository.findById(storyId)
-                .orElseThrow(() -> new CustomException(ErrorCode.STORY_404_001));
-
-        if (!story.getUser().getUserId().equals(user.getUserId())) {
-            throw new CustomException(ErrorCode.STORY_403_001, "본인 스토리만 수정할 수 있습니다.");
-        }
-
-        for (int i = 0; i < pages.size(); i++) {
-            SavePageRequest req = pages.get(i);
-            MultipartFile file = files.get(i);
-
-            // 1. 파일 업로드 → S3Service
-            String fileName = UUID.randomUUID() + "_" + req.getFileName();
-            s3Service.uploadFile(file, accessToken);
-
-            // 2. StoryPage 저장
-            StoryPage page = StoryPage.builder()
-                    .story(story)
-                    .pageNumber(req.getPageNum())
-                    .content(req.getContent())
-                    .imageFileName(fileName)
-                    .build();
-
-            story.getPages().add(page);
-        }
-
-        storyRepository.save(story);
-        return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");
     }
 }

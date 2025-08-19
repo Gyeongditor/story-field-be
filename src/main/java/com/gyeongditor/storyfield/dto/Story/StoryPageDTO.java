@@ -19,4 +19,7 @@ public class StoryPageDTO {
 
     @Schema(description = "이미지 파일명", example = "xxx.png")
     private String imageFileName;
+
+    @Schema(description = "썸네일 파일명", example = "thumb_page_1.png")
+    private String thumbnailFileName;  // ✅ 새 필드
 }

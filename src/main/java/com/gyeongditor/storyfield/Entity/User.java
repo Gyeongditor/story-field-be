@@ -35,6 +35,7 @@ public class User {
     private String username;
 
     @CreationTimestamp // INSERT 쿼리가 발생할 때, 현재 시간을 자동으로 저장
+    @Column(nullable = false)
     private LocalDateTime created_at; // 회원가입한 시간
 
     @UpdateTimestamp // UPDATE 쿼리가 발생할 때, 현재 시간을 자동으로 저장

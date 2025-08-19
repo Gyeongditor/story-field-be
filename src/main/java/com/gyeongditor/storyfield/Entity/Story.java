@@ -23,8 +23,13 @@ public class Story {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
 
+    @Column(nullable = false)
     private String storyTitle;
 
+    @Column(nullable = false)
+    private String thumbnailFileName;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
