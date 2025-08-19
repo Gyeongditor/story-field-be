@@ -5,11 +5,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
+@NoArgsConstructor(force = true)  // ✅ Jackson이 필요로 함
+@AllArgsConstructor // ✅ 생성자 기반 주입도 가능
 @Schema(description = "로그인 요청 DTO")
 public class LoginDTO {
     @Schema(description = "이메일 주소", example = "user@example.com")
