@@ -14,11 +14,11 @@ import lombok.Setter;
 @AllArgsConstructor // ✅ 생성자 기반 주입도 가능
 @Schema(description = "로그인 요청 DTO")
 public class LoginDTO {
-    @Schema(description = "이메일 주소", example = "user@example.com")
+    @Schema(description = "이메일 주소", example = "newuser@example.com")
     @NotBlank(message = "이메일을 입력해주세요")
     private final String email;
 
-    @Schema(description = "비밀번호", example = "Password123!")
+    @Schema(description = "비밀번호", example = "SignUp123!")
     @NotBlank(message = "비밀번호를 입력해주세요")
     @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$",
             message = "비밀번호는 영문 대소문자, 숫자, 특수문자를 포함하여 8~16자여야 합니다")
