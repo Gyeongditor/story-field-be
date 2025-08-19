@@ -70,10 +70,6 @@ dependencies {
     implementation 'io.github.resilience4j:resilience4j-spring-boot3'
     implementation 'io.github.resilience4j:resilience4j-reactor'
 
-    // Observability
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
-    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 
     // Jackson JSR310 (LocalDateTime 지원)
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
