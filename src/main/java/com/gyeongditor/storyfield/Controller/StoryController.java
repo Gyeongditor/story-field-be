@@ -16,11 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,13 +55,10 @@ public class StoryController {
             { "status": 404, "code": "STORY_404_001", "message": "스토리가 존재하지 않습니다.", "data": null }
             """)))
     })
-    @PostMapping(path = "/stories/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping( "/stories/save")
     public ApiResponseDTO<String> saveStory(
             HttpServletRequest request,
-            @RequestPart("story") SaveStoryDTO saveStoryDTO,
-            @RequestPart("thumbnail") MultipartFile thumbnail,
-            @RequestPart("page_images") List<MultipartFile> pageImages
-    ) throws IOException {
+            @RequestBody SaveStoryDTO saveStoryDTO) {
 
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -73,7 +67,7 @@ public class StoryController {
 
         String accessToken = authorizationHeader.substring(7).trim();
 
-        return storyService.saveStoryFromFastApi(accessToken, saveStoryDTO, thumbnail, pageImages);
+        return storyService.saveStoryFromFastApi(accessToken, saveStoryDTO);
     }
 
 
@@ -110,8 +104,15 @@ public class StoryController {
     })
     @GetMapping("/stories/main")
     public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(
-            @RequestHeader("Authorization") String accessToken,
+            HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 존재하지 않습니다.");
+        }
+
+        String accessToken = authorizationHeader.substring(7).trim();
+
         return storyService.getMainPageStories(page, accessToken);
     }
 
@@ -135,8 +136,16 @@ public class StoryController {
     })
     @DeleteMapping("/api/stories/{storyId}")
     public ApiResponseDTO<Void> deleteStory(
-            @RequestHeader("Authorization") String accessToken,
+            HttpServletRequest request,
             @PathVariable UUID storyId) {
-        return storyService.deleteStory(accessToken.replace("Bearer ", ""), storyId);
+
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 존재하지 않습니다.");
+        }
+
+        String accessToken = authorizationHeader.substring(7).trim();
+
+        return storyService.deleteStory(accessToken, storyId);
     }
 }

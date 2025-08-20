@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,43 +32,26 @@ public class StoryService {
     private final S3Service s3Service;
     private final UserService userService;
 
-    /**
-     * FastAPI 결과 저장
-     */
     @Transactional
-    public ApiResponseDTO<String> saveStoryFromFastApi(
-            String accessToken,
-            SaveStoryDTO saveStoryDTO,
-            MultipartFile thumbnail,
-            List<MultipartFile> pageImages) throws IOException {
+    public ApiResponseDTO<String> saveStoryFromFastApi(String accessToken, SaveStoryDTO saveStoryDTO) {
 
-        // 1. 토큰 검증
+        // 1. 토큰 → User 조회
         User user = userService.getUserFromToken(accessToken);
-
-        // 2. 새 Story 생성
+        String thumbnailFileName = UUID.randomUUID() + "_" + saveStoryDTO.getThumbnailFileName();
+        // 2. Story 엔티티 생성 (UUID 부여)
         Story.StoryBuilder storyBuilder = Story.builder()
                 .storyId(UUID.randomUUID())
                 .user(user)
-                .storyTitle(saveStoryDTO.getStoryTitle()); // ✅ AI가 넘겨준 제목
-
-        // 3. 썸네일 업로드 + UUID 붙이기
-        if (thumbnail != null && !thumbnail.isEmpty()) {
-            String thumbnailFileName = UUID.randomUUID() + "_" + saveStoryDTO.getThumbnailFileName();
-            s3Service.uploadFile(thumbnail, thumbnailFileName);
-
-            storyBuilder.thumbnailFileName(thumbnailFileName); // ✅ UUID 붙인 값 저장
-        }
+                .storyTitle(saveStoryDTO.getStoryTitle())
+                .thumbnailFileName(thumbnailFileName)
+                .createdAt(LocalDateTime.now());
 
         Story story = storyBuilder.build();
 
-        // 4. 페이지 저장
         List<StoryPageDTO> pages = saveStoryDTO.getPages();
         for (int i = 0; i < pages.size(); i++) {
             StoryPageDTO req = pages.get(i);
-            MultipartFile file = pageImages.get(i);
-
             String fileName = UUID.randomUUID() + "_" + req.getImageFileName();
-            s3Service.uploadFile(file, fileName);
 
             StoryPage page = StoryPage.builder()
                     .story(story)
@@ -78,12 +62,11 @@ public class StoryService {
 
             story.getPages().add(page);
         }
-
-        // 5. DB 저장
         storyRepository.save(story);
 
         return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");
     }
+
 
     /**
      * 스토리 페이지 조회
