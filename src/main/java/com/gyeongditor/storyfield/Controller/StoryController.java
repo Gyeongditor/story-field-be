@@ -4,12 +4,15 @@ import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
+import com.gyeongditor.storyfield.exception.CustomException;
+import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.service.StoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -34,16 +37,24 @@ public class StoryController {
             @ApiResponse(responseCode = "201", description = "스토리 페이지 저장 성공"),
             @ApiResponse(responseCode = "404", description = "스토리를 찾을 수 없음")
     })
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/stories/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponseDTO<String> saveStory(
-            @RequestHeader("Authorization") String accessToken,
+            HttpServletRequest request,
             @RequestPart("story") SaveStoryDTO saveStoryDTO,
             @RequestPart("thumbnail") MultipartFile thumbnail,
             @RequestPart("page_images") List<MultipartFile> pageImages
     ) throws IOException {
-        return storyService.saveStoryFromFastApi(
-                accessToken.replace("Bearer ", ""), saveStoryDTO, thumbnail, pageImages);
+
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 존재하지 않습니다.");
+        }
+
+        String accessToken = authorizationHeader.substring(7).trim();
+
+        return storyService.saveStoryFromFastApi(accessToken, saveStoryDTO, thumbnail, pageImages);
     }
+
 
     @Operation(summary = "스토리 페이지 조회", description = "스토리 ID에 해당하는 전체 페이지 조회")
     @ApiResponses({
