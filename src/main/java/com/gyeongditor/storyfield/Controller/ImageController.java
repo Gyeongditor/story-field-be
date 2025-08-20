@@ -5,6 +5,7 @@ import com.gyeongditor.storyfield.service.S3Service;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -34,9 +35,51 @@ public class ImageController {
             """
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Presigned URL 생성 성공"),
-            @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
-            @ApiResponse(responseCode = "500", description = "Presigned URL 생성 실패")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Presigned URL 생성 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 200,
+              "code": "FILE_200_002",
+              "message": "Presigned URL 생성 성공",
+              "data": "https://s3-....amazonaws.com/bucket/key?X-Amz-Expires=600&..."
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "AccessToken 누락 또는 유효하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 401,
+              "code": "AUTH_401_012",
+              "message": "유효하지 않은 인증 토큰입니다.",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Presigned URL 생성 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 500,
+              "code": "FILE_500_002",
+              "message": "Presigned URL 생성 실패",
+              "data": null
+            }
+            """)
+                    )
+            )
     })
     @GetMapping("/presign")
     public ApiResponseDTO<String> getPresignedUrl(
@@ -56,9 +99,66 @@ public class ImageController {
             description = "Multipart 형식으로 이미지를 업로드하고, 업로드된 이미지의 S3 URL을 반환합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "업로드 성공"),
-            @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
-            @ApiResponse(responseCode = "500", description = "업로드 실패")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "업로드 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 200,
+              "code": "FILE_200_001",
+              "message": "파일 업로드 성공",
+              "data": "https://s3-....amazonaws.com/bucket/abc.png"
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "AccessToken 누락 또는 유효하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 401,
+              "code": "AUTH_401_012",
+              "message": "유효하지 않은 인증 토큰입니다.",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "413",
+                    description = "허용된 요청 크기 초과",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 413,
+              "code": "REQ_413_001",
+              "message": "허용된 요청 크기 초과",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "업로드 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 500,
+              "code": "FILE_500_001",
+              "message": "파일 업로드 중 오류 발생",
+              "data": null
+            }
+            """)
+                    )
+            )
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponseDTO<String> uploadImage(
@@ -83,9 +183,49 @@ public class ImageController {
             description = "S3에 업로드된 파일명을 통해 정적 이미지 URL을 반환합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "URL 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
-            @ApiResponse(responseCode = "500", description = "URL 조회 실패")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "URL 조회 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 200,
+              "code": "FILE_200_003",
+              "message": "파일 URL 조회 성공",
+              "data": "https://s3-....amazonaws.com/bucket/xxx.png"
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "AccessToken 누락 또는 유효하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 401,
+              "code": "AUTH_401_012",
+              "message": "유효하지 않은 인증 토큰입니다.",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "파일 URL 조회 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 500,
+              "code": "FILE_500_003",
+              "message": "파일 URL 조회 실패",
+              "data": null
+            }
+            """)))
     })
     @GetMapping("/{fileName}")
     public ApiResponseDTO<String> getImageUrl(
@@ -104,9 +244,51 @@ public class ImageController {
             description = "S3에 업로드된 파일명을 기반으로 이미지를 삭제합니다."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "삭제 성공"),
-            @ApiResponse(responseCode = "401", description = "AccessToken 누락 또는 유효하지 않음"),
-            @ApiResponse(responseCode = "500", description = "삭제 실패")
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "삭제 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 204,
+              "code": "FILE_204_001",
+              "message": "파일 삭제 성공",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "AccessToken 누락 또는 유효하지 않음",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 401,
+              "code": "AUTH_401_012",
+              "message": "유효하지 않은 인증 토큰입니다.",
+              "data": null
+            }
+            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "파일 삭제 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = """
+            {
+              "status": 500,
+              "code": "FILE_500_004",
+              "message": "파일 삭제 실패",
+              "data": null
+            }
+            """)
+                    )
+            )
     })
     @DeleteMapping("/{fileName}")
     public ApiResponseDTO<Void> deleteImage(
