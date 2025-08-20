@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,6 +27,7 @@ public class S3Service {
     private final AwsProperties awsProperties;
     private final JwtTokenProvider jwtTokenProvider;
 
+    // Presigned URL 발급
     public ApiResponseDTO<String> generatePresignedUrl(String fileName, String accessToken) {
         jwtTokenProvider.validateOrThrow(accessToken);
 
@@ -42,20 +45,52 @@ public class S3Service {
         return ApiResponseDTO.success(SuccessCode.FILE_200_002, presignedUrl);
     }
 
-    public ApiResponseDTO<String> uploadFile(MultipartFile file, String accessToken) throws IOException {
+    // 단순 파일 업로드 (ApiResponse 반환)
+    public List<String> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException {
         jwtTokenProvider.validateOrThrow(accessToken);
 
+        List<String> uploadedFileNames = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file != null && !file.isEmpty()) {
+                String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                upload(file, fileName); // 내부 private upload 호출
+                uploadedFileNames.add(fileName);
+            }
+        }
+
+        return uploadedFileNames;
+    }
+
+    public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
+        // 1. 토큰 검증
+        jwtTokenProvider.validateOrThrow(accessToken);
+
+        // 2. 파일명 생성 (UUID 붙이기)
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
+        // 3. 업로드
+        upload(file, fileName); // 내부 private upload 호출
+
+        // 4. 업로드된 파일 URL 반환
+
+        return fileName;
+    }
+
+
+    // 내부 공통 업로드 로직
+    private void upload(MultipartFile file, String fileName) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
         metadata.setContentType(file.getContentType());
 
-        amazonS3.putObject(awsProperties.getBucket(), fileName, file.getInputStream(), metadata);
-
-        return ApiResponseDTO.success(SuccessCode.FILE_200_001, getFileUrl(fileName));
+        amazonS3.putObject(
+                awsProperties.getBucket(),
+                fileName,
+                file.getInputStream(), // IOException 발생 가능
+                metadata
+        );
     }
-
+    // 단순 URL 조회
     public ApiResponseDTO<String> getFileUrlResponse(String fileName, String accessToken) {
         jwtTokenProvider.validateOrThrow(accessToken);
         return ApiResponseDTO.success(SuccessCode.FILE_200_003, getFileUrl(fileName));
