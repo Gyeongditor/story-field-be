@@ -33,25 +33,39 @@ public class StoryService {
     private final UserService userService;
 
     @Transactional
-    public ApiResponseDTO<String> saveStoryFromFastApi(String accessToken, SaveStoryDTO saveStoryDTO) {
+    public ApiResponseDTO<String> saveStoryFromFastApi(String accessToken, SaveStoryDTO saveStoryDTO, MultipartFile file, List<MultipartFile> files) throws IOException {
 
         // 1. 토큰 → User 조회
         User user = userService.getUserFromToken(accessToken);
-        String thumbnailFileName = UUID.randomUUID() + "_" + saveStoryDTO.getThumbnailFileName();
-        // 2. Story 엔티티 생성 (UUID 부여)
-        Story.StoryBuilder storyBuilder = Story.builder()
+
+        // 2. 썸네일 파일 업로드 (단일 파일)
+        String thumbnailFileName = s3Service.uploadThumbnailFile(file, accessToken);
+
+        // 3. 스토리 페이지 이미지 파일들 업로드 (리스트) - 👈 반복문 밖에서 한 번만 실행
+        List<String> pageImageFileNames = s3Service.uploadFiles(files, accessToken);
+
+        // 4. Story 엔티티 생성
+        Story story = Story.builder()
                 .storyId(UUID.randomUUID())
                 .user(user)
                 .storyTitle(saveStoryDTO.getStoryTitle())
                 .thumbnailFileName(thumbnailFileName)
-                .createdAt(LocalDateTime.now());
+                .createdAt(LocalDateTime.now())
+                .build();
 
-        Story story = storyBuilder.build();
-
+        // 5. Story Page 생성 및 매핑
         List<StoryPageDTO> pages = saveStoryDTO.getPages();
+
+        // 🚨 추가: 페이지 수와 파일 수가 다를 경우를 대비한 방어 코드
+        if (pages.size() != pageImageFileNames.size()) {
+            // 이 부분에 예외 처리 로직을 추가하는 것이 좋습니다.
+            throw new IllegalArgumentException("페이지 수와 이미지 파일 수가 일치하지 않습니다.");
+        }
+
         for (int i = 0; i < pages.size(); i++) {
             StoryPageDTO req = pages.get(i);
-            String fileName = UUID.randomUUID() + "_" + req.getImageFileName();
+            // 👈 미리 업로드된 파일 이름 리스트에서 순서에 맞는 파일명을 가져옴
+            String fileName = pageImageFileNames.get(i);
 
             StoryPage page = StoryPage.builder()
                     .story(story)
@@ -62,6 +76,7 @@ public class StoryService {
 
             story.getPages().add(page);
         }
+
         storyRepository.save(story);
 
         return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");

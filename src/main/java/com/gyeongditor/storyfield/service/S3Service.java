@@ -46,7 +46,7 @@ public class S3Service {
     }
 
     // 단순 파일 업로드 (ApiResponse 반환)
-    public ApiResponseDTO<List<String>> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException {
+    public List<String> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException {
         jwtTokenProvider.validateOrThrow(accessToken);
 
         List<String> uploadedFileNames = new ArrayList<>();
@@ -58,10 +58,10 @@ public class S3Service {
             }
         }
 
-        return ApiResponseDTO.success(SuccessCode.FILE_200_001, uploadedFileNames);
+        return uploadedFileNames;
     }
 
-    public ApiResponseDTO<String> uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
+    public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
         // 1. 토큰 검증
         jwtTokenProvider.validateOrThrow(accessToken);
 
@@ -73,7 +73,7 @@ public class S3Service {
 
         // 4. 업로드된 파일 URL 반환
 
-        return ApiResponseDTO.success(SuccessCode.FILE_200_001, fileName);
+        return fileName;
     }
 
 
