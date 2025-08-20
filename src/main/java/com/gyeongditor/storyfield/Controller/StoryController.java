@@ -97,7 +97,7 @@ public class StoryController {
          {"storyId":"223e4567-e89b-12d3-a456-426614174000","storyTitle":"숲 속의 비밀","thumbnailUrl":"https://.../thumb2.png"}
        ]}""")))
     })
-    @GetMapping("/thumbnails")
+    @GetMapping("/stories/main")
     public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(
             @RequestHeader("Authorization") String accessToken,
             @RequestParam(defaultValue = "0") int page) {
