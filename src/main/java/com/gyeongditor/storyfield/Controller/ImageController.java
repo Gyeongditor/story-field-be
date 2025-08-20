@@ -258,9 +258,6 @@ public class ImageController {
             @RequestHeader("Authorization") String authorizationHeader
     ) throws IOException {
 
-        log.info("썸네일 파일 업로드 요청 - 파일명: {}, 크기: {} bytes",
-                file.getOriginalFilename(), file.getSize());
-
         // Authorization 헤더에서 토큰 추출 (Bearer 접두사 제거)
         String accessToken = authorizationHeader.replace("Bearer ", "");
 
