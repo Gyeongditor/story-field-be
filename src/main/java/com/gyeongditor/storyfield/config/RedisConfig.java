@@ -1,5 +1,6 @@
 package com.gyeongditor.storyfield.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,10 +13,11 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @EnableRedisRepositories
 public class RedisConfig {
 
-    @Bean // Lettuce를 이용해 Redis 서버에 연결
-    public RedisConnectionFactory redisConnectionFactory() {
-        // 'redis'는 docker-compose 서비스 이름, 포트는 Redis 기본 6379
-        return new LettuceConnectionFactory("redis", 6379);
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory(
+            @Value("${spring.data.redis.host}") String host,
+            @Value("${spring.data.redis.port}") int port) {
+        return new LettuceConnectionFactory(host, port);
     }
 
     @Bean // Redis 작업을 수행하기 위한 RedisTemplate 빈을 정의
