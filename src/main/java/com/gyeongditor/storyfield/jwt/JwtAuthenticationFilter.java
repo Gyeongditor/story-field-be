@@ -80,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtTokenProvider.validateRefreshOrThrow(refreshToken);
 
             if (jwtTokenProvider.isRefreshTokenBlacklisted(refreshToken)) {
-                throw new CustomException(ErrorCode.AUTH_401_008, "블랙리스트에 등록된 리프레시 토큰입니다.");
+                throw new CustomException(ErrorCode.AUTH_401_012, "블랙리스트에 등록된 액세스 토큰입니다.");
             }
 
             String newAccessToken = jwtTokenProvider.createTokenFromRefreshToken(refreshToken);

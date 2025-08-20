@@ -29,29 +29,40 @@ public class UserService {
 
     // ───────────────────── 회원가입 ─────────────────────
     public ApiResponseDTO<UserResponseDTO> signUp(SignUpDTO signUpDTO) {
+        // 이메일 중복 검사
         if (isEmailAlreadyExists(signUpDTO.getEmail())) {
             throw new CustomException(ErrorCode.USER_409_001, "이미 등록된 이메일입니다.");
+        }
+        
+        // 닉네임 중복 검사 (추후 구현 시 사용)
+        if (isUsernameAlreadyExists(signUpDTO.getUsername())) {
+            throw new CustomException(ErrorCode.USER_409_002, "이미 사용 중인 닉네임입니다.");
         }
 
         String encodedPassword = encodePassword(signUpDTO.getPassword());
         String verificationToken = UUID.randomUUID().toString();
 
-        User user = User.builder()
-                .email(signUpDTO.getEmail())
-                .username(signUpDTO.getUsername())
-                .password(encodedPassword)
-                .accountNonExpired(true)
-                .accountNonLocked(true)
-                .credentialsNonExpired(true)
-                .enabled(true)
-                .mailVerificationToken(verificationToken)
-                .build();
+        try {
+            User user = User.builder()
+                    .email(signUpDTO.getEmail())
+                    .username(signUpDTO.getUsername())
+                    .password(encodedPassword)
+                    .accountNonExpired(true)
+                    .accountNonLocked(true)
+                    .credentialsNonExpired(true)
+                    .enabled(false) // 이메일 인증 전까지는 비활성화
+                    .mailVerificationToken(verificationToken)
+                    .build();
 
-        userRepository.save(user);
-        sendEmail(user.getEmail(), verificationToken, "회원가입 이메일 인증");
+            userRepository.save(user);
+            sendEmail(user.getEmail(), verificationToken, "회원가입 이메일 인증");
 
-        UserResponseDTO dto = new UserResponseDTO(user.getEmail(), user.getUsername());
-        return ApiResponseDTO.success(SuccessCode.USER_201_001, dto);
+            UserResponseDTO dto = new UserResponseDTO(user.getEmail(), user.getUsername());
+            return ApiResponseDTO.success(SuccessCode.USER_201_001, dto);
+            
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.SERVER_500_001, "회원가입 처리 중 서버 오류가 발생했습니다.");
+        }
     }
 
     // ───────────────────── 이메일 인증 ─────────────────────
@@ -107,6 +118,12 @@ public class UserService {
 
     private boolean isEmailAlreadyExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+    
+    private boolean isUsernameAlreadyExists(String username) {
+        // TODO: UserRepository에 existsByUsername 메서드 추가 필요
+        // return userRepository.existsByUsername(username);
+        return false; // 임시로 false 반환 (추후 구현 시 USER_409_002 ErrorCode 사용됨)
     }
 
     private void sendEmail(String email, String verificationToken, String subject) {

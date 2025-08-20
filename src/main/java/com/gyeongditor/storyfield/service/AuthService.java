@@ -112,12 +112,16 @@ public class AuthService {
      */
     private String extractToken(String bearerToken) {
         if (bearerToken == null || bearerToken.isBlank()) {
-            throw new CustomException(ErrorCode.AUTH_401_004, "Authorization 헤더가 비어있습니다.");
+            throw new CustomException(ErrorCode.AUTH_401_010, "Authorization 헤더가 비어있습니다.");
         }
         if (bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        return bearerToken; // Bearer 접두어가 없는 경우 그대로 반환
+        // Bearer 접두어가 없는 경우
+        if (bearerToken.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 비어있습니다.");
+        }
+        return bearerToken;
     }
 
     /**
