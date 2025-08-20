@@ -75,16 +75,52 @@ public class JwtTokenProvider {
      * 토큰 유효성 검사 실패 시 예외 발생
      */
     public void validateOrThrow(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.AUTH_401_010, "인증 토큰이 없습니다.");
+        }
+        
         try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+            Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+            
+            // 토큰 만료 검사
+            if (claims.getExpiration().before(new Date())) {
+                throw new CustomException(ErrorCode.AUTH_401_011, "인증 토큰이 만료되었습니다.");
+            }
+            
+            // 블랙리스트 검사
+            String jti = claims.getId();
+            if (jti != null && jwtTokenRedisRepository.isTokenBlacklisted(jti)) {
+                throw new CustomException(ErrorCode.AUTH_401_012, "유효하지 않은 인증 토큰입니다.");
+            }
+            
+        } catch (CustomException e) {
+            throw e; // CustomException은 그대로 재던지기
         } catch (Exception e) {
-            throw new CustomException(ErrorCode.AUTH_401_004, "유효하지 않은 액세스 토큰입니다.");
+            throw new CustomException(ErrorCode.AUTH_401_012, "유효하지 않은 액세스 토큰입니다.");
         }
     }
 
     public void validateRefreshOrThrow(String refreshToken) {
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "RefreshToken이 없습니다.");
+        }
+        
         try {
-            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken);
+            Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(refreshToken).getBody();
+            
+            // 토큰 만료 검사
+            if (claims.getExpiration().before(new Date())) {
+                throw new CustomException(ErrorCode.AUTH_401_005, "RefreshToken이 만료되었습니다.");
+            }
+            
+            // 블랙리스트 검사
+            String jti = claims.getId();
+            if (jti != null && jwtTokenRedisRepository.isTokenBlacklisted(jti)) {
+                throw new CustomException(ErrorCode.AUTH_401_012, "유효하지 않은 RefreshToken입니다.");
+            }
+            
+        } catch (CustomException e) {
+            throw e; // CustomException은 그대로 재던지기
         } catch (Exception e) {
             throw new CustomException(ErrorCode.AUTH_401_005, "유효하지 않은 리프레시 토큰입니다.");
         }
