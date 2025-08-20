@@ -165,23 +165,23 @@ public class ImageController {
 //                    )
 //            )
 //    })
-////    @PostMapping(path = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-////    public ApiResponseDTO<List<String>> uploadImage(
-////            @Parameter(
-////                    description = "업로드할 이미지 파일들",
-////                    required = true,
-////                    content = @Content(
-////                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-////                            schema = @Schema(type = "string", format = "binary")
-////                    )
-////            )
-////            @RequestParam("files") List<MultipartFile> files,
-////            @Parameter(description = "Bearer AccessToken", required = true)
-////            @RequestHeader("Authorization") String authorizationHeader
-////    ) throws IOException {
-////        String accessToken = authorizationHeader.replace("Bearer ", "");
-////        return s3Service.uploadFiles(files, accessToken);
-////    }
+//    @PostMapping(path = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ApiResponseDTO<List<String>> uploadImage(
+//            @Parameter(
+//                    description = "업로드할 이미지 파일들",
+//                    required = true,
+//                    content = @Content(
+//                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+//                            schema = @Schema(type = "string", format = "binary")
+//                    )
+//            )
+//            @RequestParam("files") List<MultipartFile> files,
+//            @Parameter(description = "Bearer AccessToken", required = true)
+//            @RequestHeader("Authorization") String authorizationHeader
+//    ) throws IOException {
+//        String accessToken = authorizationHeader.replace("Bearer ", "");
+//        return s3Service.uploadFiles(files, accessToken);
+//   }
 //    @SneakyThrows
 //    @Operation(
 //            summary = "이미지 업로드",
