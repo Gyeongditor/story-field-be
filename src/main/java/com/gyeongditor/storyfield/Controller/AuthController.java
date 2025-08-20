@@ -36,7 +36,7 @@ public class AuthController {
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(name = "성공", value = """
       {"status":200,"code":"AUTH_200_001","message":"로그인이 성공적으로 완료되었습니다.",
-       "data":{"accessToken":"eyJhbGciOiJIUzI1NiIs...","refreshToken":"eyJhbGciOiJIUzI1NiIs..."}}"""))),
+       "data":{"로그인 상태": "성공","AccessToken":"eyJhbGciOiJIUzI1NiIs...","RefreshToken":"eyJhbGciOiJIUzI1NiIs..."}}"""))),
             @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(mediaType = "application/json",
                             examples = @ExampleObject(value = """

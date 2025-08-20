@@ -67,9 +67,11 @@ public class AuthService {
         response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         response.addHeader("userUUID", uuid);
 
-        // 6) data에 로그인 상태만 담기 (또는 필요 시 AT·UUID 추가 가능)
+        // 6) data에 로그인 상태와 토큰 정보 담기
         Map<String, String> data = new HashMap<>();
         data.put("로그인 상태", "성공");
+        data.put("AccessToken", accessToken);
+        data.put("RefreshToken", refreshToken);
 
         // 7) ApiResponseDTO로 반환
         return ApiResponseDTO.success(SuccessCode.AUTH_200_001, data);
@@ -149,6 +151,8 @@ public class AuthService {
         // 7) 응답 바디 반환
         Map<String, String> data = new HashMap<>();
         data.put("로그인 상태", "성공");
+        data.put("AccessToken", newAccessToken);
+        // RefreshToken은 rotation 정책에 따라 새로 발급된 토큰을 포함 (필요시)
         return ApiResponseDTO.success(SuccessCode.AUTH_200_007, data);
     }
 
