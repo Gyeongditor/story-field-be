@@ -80,7 +80,17 @@ public enum ErrorCode {
     FILE_500_003(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_003", "파일 URL 조회 실패"),
     FILE_500_004(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_500_004", "파일 삭제 실패"),
 
-    // 9. 기타 (Etc)
+    // 9. 오디오 관련 (Audio)
+    AUDIO_400_001(HttpStatus.BAD_REQUEST, "AUDIO_400_001", "오디오 파일이 비어 있습니다."),
+    AUDIO_400_002(HttpStatus.BAD_REQUEST, "AUDIO_400_002", "허용되지 않은 오디오 파일 형식입니다."),
+    AUDIO_413_001(HttpStatus.PAYLOAD_TOO_LARGE, "AUDIO_413_001", "허용된 오디오 파일 크기를 초과했습니다."),
+    AUDIO_404_001(HttpStatus.NOT_FOUND, "AUDIO_404_001", "오디오 파일을 찾을 수 없습니다."),
+    AUDIO_500_001(HttpStatus.INTERNAL_SERVER_ERROR, "AUDIO_500_001", "오디오 파일 업로드 중 오류가 발생했습니다."),
+    AUDIO_500_002(HttpStatus.INTERNAL_SERVER_ERROR, "AUDIO_500_002", "오디오 파일 삭제 중 오류가 발생했습니다."),
+    AUDIO_500_003(HttpStatus.INTERNAL_SERVER_ERROR, "AUDIO_500_003", "오디오 파일 URL 조회 실패"),
+    AUDIO_500_004(HttpStatus.INTERNAL_SERVER_ERROR, "AUDIO_500_004", "Presigned URL 생성 실패"),
+
+    // 10. 기타 (Etc)
     ETC_520_001(HttpStatus.INTERNAL_SERVER_ERROR, "ETC_520_001", "알 수 없는 오류");
 
     private final HttpStatus status;

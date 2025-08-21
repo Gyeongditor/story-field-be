@@ -14,8 +14,13 @@ import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.amazonaws.HttpMethod;
+import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
+
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
@@ -110,20 +115,28 @@ public class S3Service {
     }
 
     // 오디오 파일 업로드 (크기 + MIME 타입 검증 포함)
-    public ApiResponseDTO<String> uploadAudioFile(MultipartFile file, String accessToken) throws IOException {
+    public ApiResponseDTO<String> uploadAudioFile(MultipartFile file, String accessToken) {
         jwtTokenProvider.validateOrThrow(accessToken);
 
         validateAudioFile(file);
 
-        String fileName = "audio/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        try {
+            String fileName = "audio/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(file.getSize());
-        metadata.setContentType(file.getContentType());
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(file.getSize());
+            metadata.setContentType(file.getContentType());
 
-        amazonS3.putObject(awsProperties.getBucket(), fileName, file.getInputStream(), metadata);
+            amazonS3.putObject(awsProperties.getBucket(), fileName, file.getInputStream(), metadata);
 
-        return ApiResponseDTO.success(SuccessCode.FILE_200_001, getFileUrl(fileName));
+            // Audio 전용 성공코드 사용
+            return ApiResponseDTO.success(SuccessCode.AUDIO_200_001, getFileUrl(fileName));
+
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.AUDIO_500_001); // Audio 전용 에러코드로 변경
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUDIO_500_001); // Audio 전용 에러코드로 변경
+        }
     }
 
 
@@ -145,14 +158,74 @@ public class S3Service {
         return amazonS3.getUrl(awsProperties.getBucket(), fileName).toString();
     }
 
+    // 키 정규화 (파일명 보정 + 보안)
+    private String normalizeAudioKey(String fileName) {
+        String decoded = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
+        // 역슬래시 → 슬래시, 경로 역참조 차단
+        decoded = decoded.replace("\\", "/");
+        if (decoded.contains("..")) {
+            throw new CustomException(ErrorCode.AUDIO_400_002); // "잘못된 파일 경로"
+        }
+        // 앞에 audio/ 없으면 붙여줌
+        return decoded.startsWith("audio/") ? decoded : "audio/" + decoded;
+    }
+
+    // 오디오 파일 존재 확인
+    private boolean audioExists(String key) {
+        return amazonS3.doesObjectExist(awsProperties.getBucket(), key);
+    }
+
+    // 오디오 URL 조회 (존재 확인 포함)
+    public ApiResponseDTO<String> getAudioFileUrl(String fileName, String accessToken) {
+        jwtTokenProvider.validateOrThrow(accessToken);
+        try {
+            String key = normalizeAudioKey(fileName);
+            if (!audioExists(key)) {
+                throw new CustomException(ErrorCode.AUDIO_404_001); // "오디오 파일을 찾을 수 없음"
+            }
+            return ApiResponseDTO.success(SuccessCode.AUDIO_200_003, getFileUrl(key));
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUDIO_500_003); // "오디오 URL 조회 실패"
+        }
+    }
+
+    // 오디오 삭제 (존재 확인 포함)
+    public ApiResponseDTO<Void> deleteAudioFile(String fileName, String accessToken) {
+        jwtTokenProvider.validateOrThrow(accessToken);
+        try {
+            String key = normalizeAudioKey(fileName);
+
+            // 1) 삭제 전 존재 여부 확인
+            if (!audioExists(key)) {
+                throw new CustomException(ErrorCode.AUDIO_404_001);
+            }
+
+            // 2) 삭제
+            amazonS3.deleteObject(awsProperties.getBucket(), key);
+
+            // 3) 삭제 확인
+            if (audioExists(key)) {
+                throw new CustomException(ErrorCode.AUDIO_500_002); // "오디오 삭제 실패"
+            }
+
+            return ApiResponseDTO.success(SuccessCode.AUDIO_204_001, null);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUDIO_500_002);
+        }
+    }
+
     // 오디오 파일 검증 (크기 + MIME 타입 + 확장자)
     private void validateAudioFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new CustomException(ErrorCode.FILE_400_001);
+            throw new CustomException(ErrorCode.AUDIO_400_001); // Audio 전용 에러코드로 변경
         }
 
         if (file.getSize() > 50 * 1024 * 1024) { // 50MB 제한
-            throw new CustomException(ErrorCode.FILE_413_002);
+            throw new CustomException(ErrorCode.AUDIO_413_001); // Audio 전용 에러코드로 변경
         }
 
         String contentType = file.getContentType();
@@ -180,11 +253,39 @@ public class S3Service {
             System.out.println("- 파일 확장자가 유효하지 않음: " + fileExtension);
             System.out.println("- 허용된 MIME 타입: " + ALLOWED_AUDIO_TYPES);
             System.out.println("- 허용된 확장자: " + ALLOWED_AUDIO_EXTENSIONS);
-            throw new CustomException(ErrorCode.FILE_400_002);
+            throw new CustomException(ErrorCode.AUDIO_400_002); // Audio 전용 에러코드로 변경
         }
 
         System.out.println("✅ 파일 검증 성공:");
         System.out.println("- MIME 타입 유효: " + validMimeType);
         System.out.println("- 확장자 유효: " + validExtension);
     }
+
+    // 다운로드용 Presigned URL (GET) - 존재 확인 후 URL 반환
+    public ApiResponseDTO<String> generateDownloadPresignedUrl(String keyOrFileName, String accessToken) {
+        jwtTokenProvider.validateOrThrow(accessToken);
+        try {
+            String key = normalizeAudioKey(keyOrFileName);
+
+            // 존재 확인: 없으면 404
+            if (!audioExists(key)) {
+                throw new CustomException(ErrorCode.AUDIO_404_001);
+            }
+
+            Date expiration = new Date(System.currentTimeMillis() + 10 * 60 * 1000); // 10분
+            GeneratePresignedUrlRequest req =
+                    new GeneratePresignedUrlRequest(awsProperties.getBucket(), key)
+                            .withMethod(HttpMethod.GET)
+                            .withExpiration(expiration);
+
+            String url = amazonS3.generatePresignedUrl(req).toString();
+            // 다운로드 presign도 "URL 조회 성공" 의미의 성공코드 사용
+            return ApiResponseDTO.success(SuccessCode.AUDIO_200_003, url);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.AUDIO_500_004); // Presigned URL 생성 실패
+        }
+    }
+
 }

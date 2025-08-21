@@ -53,6 +53,12 @@ public class SuccessCodeMapper {
         rule((p, m) -> m == HttpMethod.GET    && p.matches("^/images/presign/?$"),      SuccessCode.FILE_200_002); // Presigned URL
         rule((p, m) -> m == HttpMethod.GET    && p.matches("^/images/[^/]+/?$"),          SuccessCode.FILE_200_003);   // 파일 URL 조회
         rule((p, m) -> m == HttpMethod.DELETE && p.matches("^/images/[^/]+/?$"),        SuccessCode.FILE_204_001); // 파일 삭제
+        
+        // 오디오 (Audio) - Audio 전용 성공코드 매핑 추가
+        rule((p, m) -> m == HttpMethod.POST   && p.matches("^/api/audio/?$"),       SuccessCode.AUDIO_200_001); // 오디오 업로드
+        rule((p, m) -> m == HttpMethod.GET    && p.matches("^/api/audio/presign/?$"),      SuccessCode.AUDIO_200_002); // 오디오 Presigned URL
+        rule((p, m) -> m == HttpMethod.GET    && p.matches("^/api/audio/[^/]+/?$"),          SuccessCode.AUDIO_200_003);   // 오디오 URL 조회
+        rule((p, m) -> m == HttpMethod.DELETE && p.matches("^/api/audio/[^/]+/?$"),        SuccessCode.AUDIO_204_001); // 오디오 삭제
     }
 
     private void rule(BiFunction<String, HttpMethod, Boolean> predicate, SuccessCode code) {

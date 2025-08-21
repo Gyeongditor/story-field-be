@@ -43,7 +43,13 @@ public enum SuccessCode {
     FILE_200_001(HttpStatus.OK, "FILE_200_001", "파일 업로드 성공"),
     FILE_200_002(HttpStatus.OK, "FILE_200_002", "Presigned URL 생성 성공"),
     FILE_200_003(HttpStatus.OK, "FILE_200_003", "파일 URL 조회 성공"),
-    FILE_204_001(HttpStatus.NO_CONTENT, "FILE_204_001", "파일 삭제 성공");
+    FILE_204_001(HttpStatus.NO_CONTENT, "FILE_204_001", "파일 삭제 성공"),
+
+    // ===================== 9. 오디오 관련 (Audio) =====================
+    AUDIO_200_001(HttpStatus.OK, "AUDIO_200_001", "오디오 파일 업로드 성공"),
+    AUDIO_200_002(HttpStatus.OK, "AUDIO_200_002", "오디오 Presigned URL 생성 성공"),
+    AUDIO_200_003(HttpStatus.OK, "AUDIO_200_003", "오디오 파일 URL 조회 성공"),
+    AUDIO_204_001(HttpStatus.NO_CONTENT, "AUDIO_204_001", "오디오 파일 삭제 성공");
 
     // ===================== 필드 =====================
     private final HttpStatus status;
