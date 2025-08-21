@@ -39,6 +39,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     private final OAuth2ErrorMapper oAuth2ErrorMapper;
     private final RequestErrorMapper requestErrorMapper;
     private final FileErrorMapper fileErrorMapper;
+    private final AudioErrorMapper audioErrorMapper; // Audio 전용 에러 매퍼 추가
     private final MailErrorMapper mailErrorMapper;
     private final ResourceErrorMapper resourceErrorMapper;
     private final ServerErrorMapper serverErrorMapper;
@@ -134,6 +135,17 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     public ResponseEntity<ApiResponseDTO<Object>> onFile(Exception ex) {
         var mapped = fileErrorMapper.map(ex);
         log.error("[File] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
+    }
+
+    // Audio 관련 예외 처리 추가 - AWS S3 오디오 처리 시 발생하는 예외들을 Audio 전용으로 처리
+    @ExceptionHandler({ 
+        com.amazonaws.services.s3.model.AmazonS3Exception.class,
+        org.springframework.web.multipart.MaxUploadSizeExceededException.class
+    })
+    public ResponseEntity<ApiResponseDTO<Object>> onAudio(Exception ex) {
+        var mapped = audioErrorMapper.map(ex);
+        log.error("[Audio] {} - {}", mapped.code().getCode(), mapped.message(), ex);
         return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 
