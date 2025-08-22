@@ -216,5 +216,14 @@ public class AuthService {
         response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         response.addHeader("userUUID", uuid);
     }
+
+    public String extractAccessToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 존재하지 않습니다.");
+        }
+
+        return authorizationHeader.substring(7).trim();
+    }
 }
 

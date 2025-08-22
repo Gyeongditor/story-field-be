@@ -11,6 +11,7 @@ import com.gyeongditor.storyfield.repository.StoryRepository;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -31,15 +32,17 @@ public class StoryService {
     private final JwtTokenProvider jwtTokenProvider;
     private final S3Service s3Service;
     private final UserService userService;
+    private final AuthService authService;
 
     @Transactional
-    public ApiResponseDTO<String> saveStoryFromFastApi(String accessToken, SaveStoryDTO saveStoryDTO, MultipartFile file, List<MultipartFile> files) throws IOException {
+    public ApiResponseDTO<String> saveStoryFromFastApi(HttpServletRequest request, SaveStoryDTO saveStoryDTO, MultipartFile file, List<MultipartFile> files) throws IOException {
 
         // 1. 토큰 → User 조회
+        String accessToken = authService.extractAccessToken(request);
         User user = userService.getUserFromToken(accessToken);
 
         // 2. 썸네일 파일 업로드 (단일 파일)
-        String thumbnailFileName = s3Service.uploadThumbnailFile(file, accessToken);
+        String thumbnailFileName = s3Service.uploadThumbnailFile(file, request);
 
         // 3. 스토리 페이지 이미지 파일들 업로드 (리스트) - 👈 반복문 밖에서 한 번만 실행
         List<String> pageImageFileNames = s3Service.uploadFiles(files, accessToken);
@@ -86,7 +89,9 @@ public class StoryService {
     /**
      * 스토리 페이지 조회
      */
-    public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(UUID storyId, String accessToken) {
+    public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(UUID storyId, HttpServletRequest request) {
+        String accessToken = authService.extractAccessToken(request);
+
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.STORY_404_001));
 
@@ -112,7 +117,9 @@ public class StoryService {
     /**
      * 메인 페이지 스토리 목록 조회
      */
-    public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page, String accessToken) {
+    public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page, HttpServletRequest request) {
+        String accessToken = authService.extractAccessToken(request);
+
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Story> storyPage = storyRepository.findAll(pageable);
 
@@ -140,7 +147,9 @@ public class StoryService {
 
 
     @Transactional
-    public ApiResponseDTO<Void> deleteStory(String accessToken, UUID storyId) {
+    public ApiResponseDTO<Void> deleteStory(HttpServletRequest request, UUID storyId) {
+        String accessToken = authService.extractAccessToken(request);
+
         String email = jwtTokenProvider.getEmail(accessToken);
 
         User user = userRepository.findByEmail(email)
@@ -155,12 +164,12 @@ public class StoryService {
 
         // ✅ S3에서 썸네일 삭제
         if (story.getThumbnailFileName() != null) {
-            s3Service.deleteFile(story.getThumbnailFileName(), accessToken);
+            s3Service.deleteFile(story.getThumbnailFileName(), request);
         }
 
         // ✅ S3에서 페이지 이미지 삭제
         story.getPages().forEach(page ->
-                s3Service.deleteFile(page.getImageFileName(), accessToken)
+                s3Service.deleteFile(page.getImageFileName(), request)
         );
 
         // ✅ DB에서 스토리 삭제 (cascade 로 Page도 같이 삭제될 것임)
