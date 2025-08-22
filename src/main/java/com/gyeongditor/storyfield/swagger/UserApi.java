@@ -21,7 +21,7 @@ public interface UserApi {
     @Operation(
             summary = "회원가입",
             description = "신규 유저를 등록합니다.",
-            security = {} // 👈 인증 불필요
+            security = {} //  인증 불필요
     )
     @ApiSuccessResponse(
             SuccessCode.USER_201_001

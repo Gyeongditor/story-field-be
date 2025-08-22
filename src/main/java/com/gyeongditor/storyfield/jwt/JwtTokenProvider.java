@@ -4,8 +4,6 @@ import com.gyeongditor.storyfield.Entity.CustomUserDetails;
 import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -53,7 +51,7 @@ public class JwtTokenProvider {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         Claims claims = Jwts.claims().setSubject(userDetails.getEmail()); // sub = email
-        claims.put("userUUID", userDetails.getUserId().toString());       // 🔑 uuid 별도 claim 추가
+        claims.put("userUUID", userDetails.getUserId().toString());       // uuid 별도 claim 추가
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validitySeconds * 1000);
@@ -173,7 +171,7 @@ public class JwtTokenProvider {
     public void invalidateTokensOrThrow(String accessToken, String refreshToken) {
         // 1. RefreshToken 삭제
         Claims refreshClaims = parseClaims(refreshToken);
-        String userUUID = (String) refreshClaims.get("userUUID"); // ✅ 여기서 uuid 추출
+        String userUUID = (String) refreshClaims.get("userUUID"); // 여기서 uuid 추출
         if (userUUID == null) {
             throw new CustomException(ErrorCode.AUTH_401_007, "RefreshToken에 userUUID 클레임이 없습니다.");
         }

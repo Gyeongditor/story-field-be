@@ -59,7 +59,7 @@ public class StoryService {
         // 5. Story Page 생성 및 매핑
         List<StoryPageDTO> pages = saveStoryDTO.getPages();
 
-        // 🚨 추가: 페이지 수와 파일 수가 다를 경우를 대비한 방어 코드
+        // 추가: 페이지 수와 파일 수가 다를 경우를 대비한 방어 코드
         if (pages.size() != pageImageFileNames.size()) {
             // 이 부분에 예외 처리 로직을 추가하는 것이 좋습니다.
             throw new IllegalArgumentException("페이지 수와 이미지 파일 수가 일치하지 않습니다.");
@@ -67,7 +67,7 @@ public class StoryService {
 
         for (int i = 0; i < pages.size(); i++) {
             StoryPageDTO req = pages.get(i);
-            // 👈 미리 업로드된 파일 이름 리스트에서 순서에 맞는 파일명을 가져옴
+            // 미리 업로드된 파일 이름 리스트에서 순서에 맞는 파일명을 가져옴
             String fileName = pageImageFileNames.get(i);
 
             StoryPage page = StoryPage.builder()
@@ -85,10 +85,7 @@ public class StoryService {
         return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");
     }
 
-
-    /**
-     * 스토리 페이지 조회
-     */
+    // 스토리 페이지 조회
     public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(UUID storyId, HttpServletRequest request) {
         String accessToken = authService.extractAccessToken(request);
 
@@ -114,9 +111,7 @@ public class StoryService {
     }
 
 
-    /**
-     * 메인 페이지 스토리 목록 조회
-     */
+    // 메인 페이지 스토리 목록 조회
     public ApiResponseDTO<List<StoryThumbnailResponseDTO>> getMainPageStories(int page, HttpServletRequest request) {
         String accessToken = authService.extractAccessToken(request);
 

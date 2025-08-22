@@ -18,12 +18,12 @@ public class ApiSuccessExampleProcessor implements OperationCustomizer {
         ApiSuccessResponse annotation = handlerMethod.getMethodAnnotation(ApiSuccessResponse.class);
         if (annotation != null) {
             for (SuccessCode successCode : annotation.value()) {
-                // ✅ 응답 스키마 + 예제 동시 등록
+                // 응답 스키마 + 예제 동시 등록
                 ApiResponse response = new ApiResponse()
                         .description(successCode.getMessage())
                         .content(new Content().addMediaType("application/json",
                                 new MediaType()
-                                        .schema(new Schema<>().type("object")) // <- 스키마 명시
+                                        .schema(new Schema<>().type("object")) // 스키마 명시
                                         .addExamples(successCode.name(),
                                                 new Example().value(buildExample(successCode)))
                         ));

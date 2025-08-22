@@ -1,6 +1,5 @@
 package com.gyeongditor.storyfield.repository;
 
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
