@@ -5,6 +5,7 @@ import com.gyeongditor.storyfield.dto.UserDTO.SignUpDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -22,7 +23,10 @@ public interface UserApi {
             description = "신규 유저를 등록합니다.",
             security = {} // 👈 인증 불필요
     )
-    @ApiErrorExample({ErrorCode.USER_409_001}) // 중복 이메일
+    @ApiSuccessResponse(
+            SuccessCode.USER_201_001
+    )
+    @ApiErrorResponse({ErrorCode.USER_409_001}) // 중복 이메일
     @PostMapping("/signup")
     ApiResponseDTO<UserResponseDTO> signUp(@Valid @RequestBody SignUpDTO signUpDTO);
 
@@ -32,7 +36,10 @@ public interface UserApi {
             parameters = {@Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)},
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.USER_200_001
+    )
+    @ApiErrorResponse({
             ErrorCode.AUTH_401_003, // 토큰 없음
             ErrorCode.AUTH_401_004, // 토큰 유효하지 않음
             ErrorCode.AUTH_401_005, // 토큰 만료
@@ -47,7 +54,10 @@ public interface UserApi {
             parameters = {@Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)},
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.USER_200_002
+    )
+    @ApiErrorResponse({
             ErrorCode.REQ_422_001, // 데이터 유효성 검사 실패
             ErrorCode.AUTH_401_004, // 토큰 유효하지 않음
             ErrorCode.AUTH_403_002  // 권한 없음
@@ -63,7 +73,10 @@ public interface UserApi {
             parameters = {@Parameter(name = "Authorization", description = "Bearer {accessToken}", required = true)},
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.USER_204_001
+    )
+    @ApiErrorResponse({
             ErrorCode.USER_404_001, // 존재하지 않는 계정
             ErrorCode.AUTH_401_004, // 토큰 유효하지 않음
             ErrorCode.AUTH_403_002  // 권한 없음
@@ -76,7 +89,10 @@ public interface UserApi {
             description = "회원가입 또는 정보 수정 시 이메일에 전달된 인증 링크를 통해 계정을 활성화합니다.",
             security = {} // 👈 인증 불필요
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.USER_200_003
+    )
+    @ApiErrorResponse({
             ErrorCode.RES_404_001, // 토큰 불일치/만료
             ErrorCode.USER_410_001 // 탈퇴된 계정
     })

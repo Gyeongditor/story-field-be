@@ -4,6 +4,7 @@ import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,10 @@ public interface StoryApi {
             description = "FastAPI가 생성한 스토리 페이지 데이터와 파일들을 저장합니다.",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.STORY_201_001
+    )
+    @ApiErrorResponse({
             ErrorCode.STORY_400_001, // 요청 데이터 잘못됨
             ErrorCode.FILE_400_001,  // 파일 비어 있음
             ErrorCode.FILE_400_002,  // 파일 형식 오류
@@ -41,7 +45,10 @@ public interface StoryApi {
             summary = "스토리 페이지 조회",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.STORY_200_001
+    )
+    @ApiErrorResponse({
             ErrorCode.STORY_404_001, // 스토리 없음
             ErrorCode.AUTH_403_002   // 접근 권한 없음
     })
@@ -55,7 +62,10 @@ public interface StoryApi {
             summary = "메인 페이지 스토리 목록 조회",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.STORY_200_002
+    )
+    @ApiErrorResponse({
             ErrorCode.SERVER_500_001 // 내부 서버 오류
     })
     @GetMapping("/api/stories/main")
@@ -69,7 +79,10 @@ public interface StoryApi {
             description = "accessToken 기반으로 본인 스토리를 삭제합니다.",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.STORY_204_001
+    )
+    @ApiErrorResponse({
             ErrorCode.STORY_404_001, // 스토리 없음
             ErrorCode.STORY_403_001, // 본인만 삭제 가능
             ErrorCode.AUTH_401_004   // 토큰 유효하지 않음

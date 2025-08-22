@@ -2,6 +2,7 @@ package com.gyeongditor.storyfield.swagger;
 
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.response.ErrorCode;
+import com.gyeongditor.storyfield.response.SuccessCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,7 +19,10 @@ public interface ImageApi {
             description = "S3에 업로드된 파일명을 통해 정적 URL을 반환합니다.",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.FILE_200_003
+    )
+    @ApiErrorResponse({
             ErrorCode.AUTH_401_012, // 유효하지 않은 인증 토큰
             ErrorCode.FILE_500_003  // 파일 URL 조회 실패
     })
@@ -33,7 +37,10 @@ public interface ImageApi {
             description = "S3에 업로드된 파일명을 기반으로 이미지를 삭제합니다.",
             security = {@SecurityRequirement(name = "bearerAuth")}
     )
-    @ApiErrorExample({
+    @ApiSuccessResponse(
+            SuccessCode.FILE_204_001
+    )
+    @ApiErrorResponse({
             ErrorCode.AUTH_401_012, // 유효하지 않은 인증 토큰
             ErrorCode.FILE_500_004  // 파일 삭제 실패
     })
