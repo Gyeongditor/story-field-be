@@ -11,6 +11,8 @@ import com.gyeongditor.storyfield.exception.CustomException;
 import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +36,7 @@ public class S3Service {
     private final AmazonS3 amazonS3;
     private final AwsProperties awsProperties;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
 
     // 오디오 허용 MIME 타입
     private static final Set<String> ALLOWED_AUDIO_TYPES = Set.of(
@@ -47,7 +50,6 @@ public class S3Service {
     private static final Set<String> ALLOWED_AUDIO_EXTENSIONS = Set.of(
             ".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".mp4", ".webm"
     );
-
 
     // Presigned URL 발급
     public ApiResponseDTO<String> generatePresignedUrl(String fileName, String accessToken) {
@@ -85,16 +87,11 @@ public class S3Service {
     }
 
     public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
-        // 1. 토큰 검증
         jwtTokenProvider.validateOrThrow(accessToken);
 
-        // 2. 파일명 생성 (UUID 붙이기)
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
-        // 3. 업로드
         upload(file, fileName); // 내부 private upload 호출
-
-        // 4. 업로드된 파일 URL 반환
 
         return fileName;
     }
@@ -141,13 +138,15 @@ public class S3Service {
 
 
     // 단순 URL 조회
-    public ApiResponseDTO<String> getFileUrlResponse(String fileName, String accessToken) {
+    public ApiResponseDTO<String> getFileUrlResponse(String fileName, HttpServletRequest request) {
+        String accessToken = authService.extractAccessToken(request);
         jwtTokenProvider.validateOrThrow(accessToken);
         return ApiResponseDTO.success(SuccessCode.FILE_200_003, getFileUrl(fileName));
     }
 
     // 파일 삭제
-    public ApiResponseDTO<Void> deleteFile(String fileName, String accessToken) {
+    public ApiResponseDTO<Void> deleteFile(String fileName, HttpServletRequest request) {
+        String accessToken = authService.extractAccessToken(request);
         jwtTokenProvider.validateOrThrow(accessToken);
         amazonS3.deleteObject(awsProperties.getBucket(), fileName);
         return ApiResponseDTO.success(SuccessCode.FILE_204_001, null);
@@ -248,7 +247,7 @@ public class S3Service {
         boolean validExtension = !fileExtension.isEmpty() && ALLOWED_AUDIO_EXTENSIONS.contains(fileExtension);
 
         if (!validMimeType && !validExtension) {
-            System.out.println("❌ 파일 검증 실패:");
+            System.out.println(" 파일 검증 실패:");
             System.out.println("- MIME 타입이 유효하지 않음: " + contentType);
             System.out.println("- 파일 확장자가 유효하지 않음: " + fileExtension);
             System.out.println("- 허용된 MIME 타입: " + ALLOWED_AUDIO_TYPES);
@@ -256,7 +255,7 @@ public class S3Service {
             throw new CustomException(ErrorCode.AUDIO_400_002); // Audio 전용 에러코드로 변경
         }
 
-        System.out.println("✅ 파일 검증 성공:");
+        System.out.println(" 파일 검증 성공:");
         System.out.println("- MIME 타입 유효: " + validMimeType);
         System.out.println("- 확장자 유효: " + validExtension);
     }

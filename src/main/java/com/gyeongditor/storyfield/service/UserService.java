@@ -10,6 +10,7 @@ import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class UserService {
     private final MailService mailService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // ───────────────────── 회원가입 ─────────────────────
+    // 회원가입
     public ApiResponseDTO<UserResponseDTO> signUp(SignUpDTO signUpDTO) {
         // 이메일 중복 검사
         if (isEmailAlreadyExists(signUpDTO.getEmail())) {
@@ -65,7 +66,7 @@ public class UserService {
         }
     }
 
-    // ───────────────────── 이메일 인증 ─────────────────────
+    // 이메일 인증
     public ApiResponseDTO<UserResponseDTO> verifyEmail(String token) {
         User user = findUserByVerificationToken(token);
         user.enableAccount();
@@ -75,16 +76,19 @@ public class UserService {
         return ApiResponseDTO.success(SuccessCode.USER_200_003, dto);
     }
 
-    // ───────────────────── 회원 조회 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<UserResponseDTO> getUserByAccessToken(String accessToken) {
+    // 회원 조회 (accessToken 기반)
+    public ApiResponseDTO<UserResponseDTO> getUserByAccessToken(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
+
 
         UserResponseDTO dto = new UserResponseDTO(user.getEmail(), user.getUsername());
         return ApiResponseDTO.success(SuccessCode.USER_200_001, dto);
     }
 
-    // ───────────────────── 회원 수정 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<UserResponseDTO> updateUserByAccessToken(String accessToken, UpdateUserDTO updateUserDTO) {
+    // 회원 수정 (accessToken 기반)
+    public ApiResponseDTO<UserResponseDTO> updateUserByAccessToken(HttpServletRequest request, UpdateUserDTO updateUserDTO) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
 
         if (!user.getEmail().equals(updateUserDTO.getEmail())) {
@@ -100,14 +104,15 @@ public class UserService {
         return ApiResponseDTO.success(SuccessCode.USER_200_002, dto);
     }
 
-    // ───────────────────── 회원 삭제 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<Void> deleteUserByAccessToken(String accessToken) {
+    // 회원 삭제 (accessToken 기반)
+    public ApiResponseDTO<Void> deleteUserByAccessToken(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
         userRepository.deleteById(user.getUserId());
         return ApiResponseDTO.success(SuccessCode.USER_204_001, null);
     }
 
-    // ───────────────────── 내부 유틸 ─────────────────────
+    // 내부 유틸
     public User getUserFromToken(String token) {
         jwtTokenProvider.validateOrThrow(token); // 유효성 검사 → 실패 시 예외
         String email = jwtTokenProvider.getEmail(token); // 이메일 추출

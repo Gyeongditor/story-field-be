@@ -19,7 +19,7 @@ public class SaveStoryDTO {
     private String storyTitle;
 
     @Schema(description = "스토리 썸네일 파일명", example = "thumb_1234.png")
-    private String thumbnailFileName;  // ✅ 추가
+    private String thumbnailFileName;  // 추가
 
     @Schema(description = "스토리 페이지 리스트")
     private List<StoryPageDTO> pages;

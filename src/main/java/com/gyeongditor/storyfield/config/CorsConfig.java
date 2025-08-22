@@ -33,7 +33,7 @@ public class CorsConfig {
         config.setMaxAge(props.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // ✅ RN 전용 엔드포인트에만 CORS 적용
+        // RN 전용 엔드포인트에만 CORS 적용
         source.registerCorsConfiguration("/api/**", config);
         return new CorsFilter(source);
     }

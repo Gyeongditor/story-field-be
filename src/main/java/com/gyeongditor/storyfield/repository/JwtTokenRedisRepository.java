@@ -14,25 +14,20 @@ public class JwtTokenRedisRepository {
     private static final String REFRESH_KEY_PREFIX = "jwt:refresh:"; // ★ 추가
     private final RedisTemplate<String, String> redisTemplate;
 
-    /**
-     * RefreshToken 저장
-     */
+
+    // RefreshToken 저장
     public void saveRefreshToken(String userUUID, String refreshToken, long expireInSeconds) {
         String key = REFRESH_KEY_PREFIX + userUUID;
         redisTemplate.opsForValue().set(key, refreshToken, expireInSeconds, TimeUnit.SECONDS);
     }
 
-    /**
-     * RefreshToken 조회
-     */
+    // RefreshToken 조회
     public String getRefreshToken(String userUUID) {
         String key = REFRESH_KEY_PREFIX + userUUID;
         return redisTemplate.opsForValue().get(key);
     }
 
-    /**
-     * RefreshToken 삭제
-     */
+    // RefreshToken 삭제
     public void deleteRefreshToken(String userUUID) {
         String key = REFRESH_KEY_PREFIX + userUUID;
         redisTemplate.delete(key);

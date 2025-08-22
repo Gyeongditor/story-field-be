@@ -1,6 +1,7 @@
 package com.gyeongditor.storyfield.handler.mapper;
 
 import com.gyeongditor.storyfield.response.SuccessCode;
+import org.apache.http.protocol.HTTP;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -9,10 +10,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-/**
- * 요청 URI와 HTTP Method에 따라 SuccessCode를 결정한다.
- * 가장 먼저 매칭되는 패턴이 우선한다(LinkedHashMap 유지).
- */
+
+// 요청 URI와 HTTP Method에 따라 SuccessCode를 결정한다.
+// 가장 먼저 매칭되는 패턴이 우선한다(LinkedHashMap 유지).
 @Component
 public class SuccessCodeMapper {
 
@@ -65,9 +65,7 @@ public class SuccessCodeMapper {
         rules.put(predicate, code);
     }
 
-    /**
-     * 우선순위 규칙 → 도메인 성공코드 → 메서드 기본코드
-     */
+    // 우선순위 규칙 → 도메인 성공코드 → 메서드 기본코드
     public SuccessCode resolve(String path, HttpMethod method, HttpStatus decidedStatusByMethod) {
         // 1) 등록된 규칙 우선
         for (var e : rules.entrySet()) {

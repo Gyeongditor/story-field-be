@@ -36,16 +36,13 @@ public class JwtTokenProvider {
     private final JwtTokenRedisRepository jwtTokenRedisRepository;
     private final UserDetailsService userDetailsService;
 
-    /**
-     * AccessToken 생성
-     */
+
+    // AccessToken 생성
     public String createToken(Authentication authentication) {
         return generateToken(authentication, accessTokenValiditySeconds);
     }
 
-    /**
-     * RefreshToken 생성
-     */
+    // RefreshToken 생성
     public String createRefreshToken(Authentication authentication) {
         return generateToken(authentication, refreshTokenValiditySeconds);
     }
@@ -54,7 +51,7 @@ public class JwtTokenProvider {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         Claims claims = Jwts.claims().setSubject(userDetails.getEmail()); // sub = email
-        claims.put("userUUID", userDetails.getUserId().toString());       // 🔑 uuid 별도 claim 추가
+        claims.put("userUUID", userDetails.getUserId().toString());       // uuid 별도 claim 추가
 
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validitySeconds * 1000);
@@ -71,9 +68,7 @@ public class JwtTokenProvider {
     }
 
 
-    /**
-     * 토큰 유효성 검사 실패 시 예외 발생
-     */
+    // 토큰 유효성 검사 실패 시 예외 발생
     public void validateOrThrow(String token) {
         if (token == null || token.trim().isEmpty()) {
             throw new CustomException(ErrorCode.AUTH_401_010, "인증 토큰이 없습니다.");
@@ -126,9 +121,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Email 추출
-     */
+    // Email 추출
     public String getEmail(String token) {
         return parseClaims(token).getSubject();
     }
@@ -145,9 +138,7 @@ public class JwtTokenProvider {
         return request.getHeader("Refresh-Token");
     }
 
-    /**
-     * RefreshToken → AccessToken 재발급
-     */
+    // RefreshToken → AccessToken 재발급
     public String createTokenFromRefreshToken(String refreshToken) {
         validateRefreshOrThrow(refreshToken);
 
@@ -160,18 +151,14 @@ public class JwtTokenProvider {
         );
     }
 
-    /**
-     * 인증 객체 추출
-     */
+    // 인증 객체 추출
     public Authentication getAuthentication(String token) {
         String email = getEmail(token);
         CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 
-    /**
-     * 토큰 파싱
-     */
+    // 토큰 파싱
     public Claims parseClaims(String token) {
         try {
             return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
@@ -180,13 +167,11 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * AccessToken & RefreshToken 무효화 처리
-     */
+    // AccessToken & RefreshToken 무효화 처리
     public void invalidateTokensOrThrow(String accessToken, String refreshToken) {
         // 1. RefreshToken 삭제
         Claims refreshClaims = parseClaims(refreshToken);
-        String userUUID = (String) refreshClaims.get("userUUID"); // ✅ 여기서 uuid 추출
+        String userUUID = (String) refreshClaims.get("userUUID"); // 여기서 uuid 추출
         if (userUUID == null) {
             throw new CustomException(ErrorCode.AUTH_401_007, "RefreshToken에 userUUID 클레임이 없습니다.");
         }

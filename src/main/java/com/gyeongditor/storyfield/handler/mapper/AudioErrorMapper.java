@@ -1,12 +1,12 @@
 package com.gyeongditor.storyfield.handler.mapper;
 
+import com.gyeongditor.storyfield.Entity.Audio;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import org.springframework.stereotype.Component;
 
-/**
- * Audio 관련 예외를 ErrorCode로 매핑하는 컴포넌트
- * 기존 FileErrorMapper와 유사한 패턴으로 Audio 전용 에러 처리
- */
+
+// Audio 관련 예외를 ErrorCode로 매핑하는 컴포넌트
+// 기존 FileErrorMapper와 유사한 패턴으로 Audio 전용 에러 처리
 @Component
 public class AudioErrorMapper {
 

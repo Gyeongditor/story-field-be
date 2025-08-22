@@ -25,9 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCKOUT_MINUTES = 1;
 
-    /**
-     * 이메일(userId) 기준으로 사용자 조회
-     */
+    // 이메일(userId) 기준으로 사용자 조회
     @Override
     public UserDetails loadUserByUsername(String userId) {
         User user = userRepository.findByEmail(userId)
@@ -55,9 +53,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         );
     }
 
-    /**
-     * 계정 상태 체크
-     */
+
+     // 계정 상태 체크
     public void handleAccountStatus(String email) {
         User user = findUserByEmail(email);
 
@@ -75,9 +72,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         log.info(ApiResponseDTO.success(SuccessCode.AUTH_200_004, email).toString());
     }
 
-    /**
-     * 로그인 실패 처리
-     */
+    // 로그인 실패 처리
     public void processFailedLogin(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
             user.incrementFailedLoginAttempts();
@@ -91,9 +86,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         });
     }
 
-    /**
-     * 로그인 성공 처리 (실패 횟수 초기화)
-     */
+
+    // 로그인 성공 처리 (실패 횟수 초기화)
     public void processSuccessfulLogin(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
             user.resetFailedLoginAttempts();
@@ -103,9 +97,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         });
     }
 
-    /**
-     * 남은 로그인 가능 횟수
-     */
+
+    // 남은 로그인 가능 횟수
     public int getRemainingLoginAttempts(String email) {
         return userRepository.findByEmail(email)
                 .map(User::getFailedLoginAttempts)

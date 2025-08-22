@@ -10,8 +10,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor(force = true)  // ✅ Jackson이 필요로 함
-@AllArgsConstructor // ✅ 생성자 기반 주입도 가능
+@NoArgsConstructor(force = true)  // Jackson이 필요로 함
+@AllArgsConstructor // 생성자 기반 주입도 가능
 @Schema(description = "로그인 요청 DTO")
 public class LoginDTO {
     @Schema(description = "이메일 주소", example = "newuser@example.com")

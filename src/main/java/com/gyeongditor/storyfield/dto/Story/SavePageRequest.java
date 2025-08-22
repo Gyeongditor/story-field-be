@@ -3,9 +3,9 @@ package com.gyeongditor.storyfield.dto.Story;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-/**
- * FastAPI -> Spring 으로 전달되는 스토리 페이지 저장 요청 DTO
- */
+import javax.swing.*;
+
+// FastAPI -> Spring 으로 전달되는 스토리 페이지 저장 요청 DTO
 @Getter
 @Setter
 @NoArgsConstructor
