@@ -6,6 +6,7 @@ import com.gyeongditor.storyfield.dto.UserDTO.UpdateUserDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.UserResponseDTO;
 import com.gyeongditor.storyfield.service.UserService;
 import com.gyeongditor.storyfield.swagger.UserApi;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,21 +23,18 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ApiResponseDTO<UserResponseDTO> getUser(String authorizationHeader) {
-        String accessToken = authorizationHeader.replace("Bearer ", "");
-        return userService.getUserByAccessToken(accessToken);
+    public ApiResponseDTO<UserResponseDTO> getUser(HttpServletRequest request) {
+        return userService.getUserByAccessToken(request);
     }
 
     @Override
-    public ApiResponseDTO<UserResponseDTO> updateUser(String authorizationHeader, UpdateUserDTO updateUserDTO) {
-        String accessToken = authorizationHeader.replace("Bearer ", "");
-        return userService.updateUserByAccessToken(accessToken, updateUserDTO);
+    public ApiResponseDTO<UserResponseDTO> updateUser(HttpServletRequest request, UpdateUserDTO updateUserDTO) {
+        return userService.updateUserByAccessToken(request, updateUserDTO);
     }
 
     @Override
-    public ApiResponseDTO<Void> deleteUser(String authorizationHeader) {
-        String accessToken = authorizationHeader.replace("Bearer ", "");
-        return userService.deleteUserByAccessToken(accessToken);
+    public ApiResponseDTO<Void> deleteUser(HttpServletRequest request) {
+        return userService.deleteUserByAccessToken(request);
     }
 
     @Override

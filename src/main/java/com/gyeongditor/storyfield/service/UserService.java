@@ -10,6 +10,7 @@ import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
 import com.gyeongditor.storyfield.repository.UserRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -76,15 +77,18 @@ public class UserService {
     }
 
     // ───────────────────── 회원 조회 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<UserResponseDTO> getUserByAccessToken(String accessToken) {
+    public ApiResponseDTO<UserResponseDTO> getUserByAccessToken(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
+
 
         UserResponseDTO dto = new UserResponseDTO(user.getEmail(), user.getUsername());
         return ApiResponseDTO.success(SuccessCode.USER_200_001, dto);
     }
 
     // ───────────────────── 회원 수정 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<UserResponseDTO> updateUserByAccessToken(String accessToken, UpdateUserDTO updateUserDTO) {
+    public ApiResponseDTO<UserResponseDTO> updateUserByAccessToken(HttpServletRequest request, UpdateUserDTO updateUserDTO) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
 
         if (!user.getEmail().equals(updateUserDTO.getEmail())) {
@@ -101,7 +105,8 @@ public class UserService {
     }
 
     // ───────────────────── 회원 삭제 (accessToken 기반) ─────────────────────
-    public ApiResponseDTO<Void> deleteUserByAccessToken(String accessToken) {
+    public ApiResponseDTO<Void> deleteUserByAccessToken(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
         userRepository.deleteById(user.getUserId());
         return ApiResponseDTO.success(SuccessCode.USER_204_001, null);
