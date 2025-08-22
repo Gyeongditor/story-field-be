@@ -86,8 +86,7 @@ public class S3Service {
         return uploadedFileNames;
     }
 
-    public String uploadThumbnailFile(MultipartFile file, HttpServletRequest request) throws IOException {
-        String accessToken = authService.extractAccessToken(request);
+    public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
         jwtTokenProvider.validateOrThrow(accessToken);
 
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();

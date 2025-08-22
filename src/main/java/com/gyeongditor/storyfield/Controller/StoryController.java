@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,18 +21,15 @@ import java.util.UUID;
 public class StoryController implements StoryApi {
 
     private final StoryService storyService;
-    private final ObjectMapper objectMapper;
 
     @Override
     public ApiResponseDTO<String> saveStory(HttpServletRequest request, String saveStoryDtoString, MultipartFile thumbnail, List<MultipartFile> pageImages) {
         try {
-            SaveStoryDTO saveStoryDTO = objectMapper.readValue(saveStoryDtoString, SaveStoryDTO.class);
-            return storyService.saveStoryFromFastApi(request, saveStoryDTO, thumbnail, pageImages);
-        } catch (Exception e) {
+            return storyService.saveStoryFromFastApi(request, saveStoryDtoString, thumbnail, pageImages);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
     @Override
     public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(HttpServletRequest request, UUID storyId) {
         return storyService.getStoryPages(storyId, request);
