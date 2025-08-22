@@ -248,7 +248,7 @@ public class S3Service {
         boolean validExtension = !fileExtension.isEmpty() && ALLOWED_AUDIO_EXTENSIONS.contains(fileExtension);
 
         if (!validMimeType && !validExtension) {
-            System.out.println("❌ 파일 검증 실패:");
+            System.out.println(" 파일 검증 실패:");
             System.out.println("- MIME 타입이 유효하지 않음: " + contentType);
             System.out.println("- 파일 확장자가 유효하지 않음: " + fileExtension);
             System.out.println("- 허용된 MIME 타입: " + ALLOWED_AUDIO_TYPES);
@@ -256,7 +256,7 @@ public class S3Service {
             throw new CustomException(ErrorCode.AUDIO_400_002); // Audio 전용 에러코드로 변경
         }
 
-        System.out.println("✅ 파일 검증 성공:");
+        System.out.println(" 파일 검증 성공:");
         System.out.println("- MIME 타입 유효: " + validMimeType);
         System.out.println("- 확장자 유효: " + validExtension);
     }

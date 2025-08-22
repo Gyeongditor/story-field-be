@@ -33,9 +33,8 @@ public class AuthService {
     private final CustomUserDetailsService userDetailsService;
     private final JwtTokenRedisRepository jwtTokenRedisRepository;
 
-    /**
-     * 로그인 처리
-     */
+
+    // 로그인 처리
     public ApiResponseDTO<Map<String, String>> login(String email, String password, HttpServletResponse response) {
         // 1) 인증 처리
         Authentication authentication = authenticationManager.authenticate(
@@ -76,9 +75,7 @@ public class AuthService {
         return ApiResponseDTO.success(SuccessCode.AUTH_200_001, data);
     }
 
-    /**
-     * 로그인 실패 처리 (AuthenticationException 전용 핸들러에서 호출)
-     */
+    // 로그인 실패 처리 (AuthenticationException 전용 핸들러에서 호출)
     public void handleLoginFailure(String email) {
         // 계정 상태 확인
         userDetailsService.handleAccountStatus(email);
@@ -93,9 +90,8 @@ public class AuthService {
         );
     }
 
-    /**
-     * 로그아웃 (RT 삭제 + AT 폐기)
-     */
+
+    // 로그아웃 (RT 삭제 + AT 폐기)
     public ApiResponseDTO<String> logout(String accessToken, String refreshToken) {
         // 1. 헤더에서 넘어온 Authorization 파싱 ("Bearer " 제거)
         String pureAccessToken = extractToken(accessToken);
@@ -106,9 +102,7 @@ public class AuthService {
         return ApiResponseDTO.success(SuccessCode.AUTH_200_002, "로그아웃 성공");
     }
 
-    /**
-     * Authorization 헤더에서 실제 토큰 문자열만 추출
-     */
+    // Authorization 헤더에서 실제 토큰 문자열만 추출
     private String extractToken(String bearerToken) {
         if (bearerToken == null || bearerToken.isBlank()) {
             throw new CustomException(ErrorCode.AUTH_401_010, "Authorization 헤더가 비어있습니다.");
@@ -123,9 +117,7 @@ public class AuthService {
         return bearerToken;
     }
 
-    /**
-     * RefreshToken으로 AccessToken 재발급
-     */
+    // RefreshToken으로 AccessToken 재발급
     public ApiResponseDTO<Map<String, String>> reissueAccessToken(HttpServletRequest request,
                                                                   HttpServletResponse response) {
 

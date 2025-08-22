@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Pattern;
 
 @Getter
 @Setter
-@NoArgsConstructor(force = true)  // ✅ Jackson이 필요로 함
-@AllArgsConstructor // ✅ 생성자 기반 주입도 가능@Schema(description = "회원가입 요청 DTO")
+@NoArgsConstructor(force = true)  // Jackson이 필요로 함
+@AllArgsConstructor // 생성자 기반 주입도 가능@Schema(description = "회원가입 요청 DTO")
 public class SignUpDTO {
 
     @Schema(description = "회원가입 이메일 주소", example = "newuser@example.com")

@@ -44,7 +44,7 @@ public class StoryService {
         // 2. 썸네일 파일 업로드 (단일 파일)
         String thumbnailFileName = s3Service.uploadThumbnailFile(file, request);
 
-        // 3. 스토리 페이지 이미지 파일들 업로드 (리스트) - 👈 반복문 밖에서 한 번만 실행
+        // 3. 스토리 페이지 이미지 파일들 업로드 (리스트) - 반복문 밖에서 한 번만 실행
         List<String> pageImageFileNames = s3Service.uploadFiles(files, accessToken);
 
         // 4. Story 엔티티 생성
@@ -98,7 +98,7 @@ public class StoryService {
         List<StoryPageResponseDTO> pages = story.getPages().stream()
                 .map(page -> {
                     String presignedUrl = s3Service
-                            .generatePresignedUrl(page.getImageFileName(), accessToken) // ✅ S3Service 활용
+                            .generatePresignedUrl(page.getImageFileName(), accessToken) // S3Service 활용
                             .getData(); // ApiResponseDTO<String> 에서 URL 꺼내기
 
                     return StoryPageResponseDTO.builder()
@@ -125,12 +125,12 @@ public class StoryService {
 
         List<StoryThumbnailResponseDTO> thumbnails = storyPage.getContent().stream()
                 .map(story -> {
-                    String thumbnailFile = story.getThumbnailFileName(); // ✅ 엔티티 필드 활용
+                    String thumbnailFile = story.getThumbnailFileName(); // 엔티티 필드 활용
                     String presignedThumbnail = null;
 
                     if (thumbnailFile != null) {
                         presignedThumbnail = s3Service
-                                .generatePresignedUrl(thumbnailFile, accessToken) // ✅ S3Service 통해 presignedUrl 발급
+                                .generatePresignedUrl(thumbnailFile, accessToken) // S3Service 통해 presignedUrl 발급
                                 .getData(); // ApiResponseDTO<String>에서 presignedUrl 꺼내기
                     }
 
@@ -162,17 +162,17 @@ public class StoryService {
             throw new CustomException(ErrorCode.STORY_403_001, "본인 스토리만 삭제할 수 있습니다.");
         }
 
-        // ✅ S3에서 썸네일 삭제
+        // S3에서 썸네일 삭제
         if (story.getThumbnailFileName() != null) {
             s3Service.deleteFile(story.getThumbnailFileName(), request);
         }
 
-        // ✅ S3에서 페이지 이미지 삭제
+        // S3에서 페이지 이미지 삭제
         story.getPages().forEach(page ->
                 s3Service.deleteFile(page.getImageFileName(), request)
         );
 
-        // ✅ DB에서 스토리 삭제 (cascade 로 Page도 같이 삭제될 것임)
+        // DB에서 스토리 삭제 (cascade 로 Page도 같이 삭제될 것임)
         storyRepository.delete(story);
 
         return ApiResponseDTO.success(SuccessCode.STORY_204_001, null);
