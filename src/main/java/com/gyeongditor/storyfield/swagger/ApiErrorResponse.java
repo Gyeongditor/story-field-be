@@ -5,6 +5,6 @@ import java.lang.annotation.*;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ApiErrorExample {
+public @interface ApiErrorResponse {
     ErrorCode[] value(); // 적용할 ErrorCode 목록
 }
