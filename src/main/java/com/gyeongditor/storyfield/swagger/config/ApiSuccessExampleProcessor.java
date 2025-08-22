@@ -1,6 +1,7 @@
 package com.gyeongditor.storyfield.swagger.config;
 
 import com.gyeongditor.storyfield.response.SuccessCode;
+import com.gyeongditor.storyfield.swagger.api.SuccessExampleMapper;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -25,7 +26,7 @@ public class ApiSuccessExampleProcessor implements OperationCustomizer {
                                 new MediaType()
                                         .schema(new Schema<>().type("object")) // 스키마 명시
                                         .addExamples(successCode.name(),
-                                                new Example().value(buildExample(successCode)))
+                                                new Example().value(SuccessExampleMapper.getExample(successCode)))
                         ));
 
                 operation.getResponses().addApiResponse(
