@@ -1,8 +1,10 @@
-package com.gyeongditor.storyfield.swagger;
+package com.gyeongditor.storyfield.swagger.api;
 
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
+import com.gyeongditor.storyfield.swagger.config.ApiErrorResponse;
+import com.gyeongditor.storyfield.swagger.config.ApiSuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

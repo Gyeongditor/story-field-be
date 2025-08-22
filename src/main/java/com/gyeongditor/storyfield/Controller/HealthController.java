@@ -2,7 +2,7 @@ package com.gyeongditor.storyfield.Controller;
 
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.response.SuccessCode;
-import com.gyeongditor.storyfield.swagger.HealthApi;
+import com.gyeongditor.storyfield.swagger.api.HealthApi;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController

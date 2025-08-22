@@ -3,7 +3,7 @@ package com.gyeongditor.storyfield.Controller;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.LoginDTO;
 import com.gyeongditor.storyfield.service.AuthService;
-import com.gyeongditor.storyfield.swagger.AuthApi;
+import com.gyeongditor.storyfield.swagger.api.AuthApi;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

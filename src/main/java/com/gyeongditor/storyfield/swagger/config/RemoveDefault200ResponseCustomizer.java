@@ -1,4 +1,4 @@
-package com.gyeongditor.storyfield.swagger;
+package com.gyeongditor.storyfield.swagger.config;
 
 
 import io.swagger.v3.oas.models.responses.ApiResponses;

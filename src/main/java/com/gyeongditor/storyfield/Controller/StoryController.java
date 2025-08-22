@@ -1,12 +1,10 @@
 package com.gyeongditor.storyfield.Controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
-import com.gyeongditor.storyfield.dto.Story.SaveStoryDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
 import com.gyeongditor.storyfield.service.StoryService;
-import com.gyeongditor.storyfield.swagger.StoryApi;
+import com.gyeongditor.storyfield.swagger.api.StoryApi;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;

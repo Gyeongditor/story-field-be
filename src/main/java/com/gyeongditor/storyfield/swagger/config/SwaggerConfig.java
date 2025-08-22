@@ -1,8 +1,5 @@
-package com.gyeongditor.storyfield.config;
+package com.gyeongditor.storyfield.swagger.config;
 
-import com.gyeongditor.storyfield.swagger.ApiErrorExampleProcessor;
-import com.gyeongditor.storyfield.swagger.ApiSuccessExampleProcessor;
-import com.gyeongditor.storyfield.swagger.RemoveDefault200ResponseCustomizer;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.models.Components;

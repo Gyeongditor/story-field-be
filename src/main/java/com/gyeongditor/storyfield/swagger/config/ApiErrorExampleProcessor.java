@@ -1,4 +1,4 @@
-package com.gyeongditor.storyfield.swagger;
+package com.gyeongditor.storyfield.swagger.config;
 
 import com.gyeongditor.storyfield.response.ErrorCode;
 import io.swagger.v3.oas.models.examples.Example;

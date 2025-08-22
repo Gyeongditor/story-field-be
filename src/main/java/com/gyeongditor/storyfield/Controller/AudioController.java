@@ -3,7 +3,7 @@ package com.gyeongditor.storyfield.Controller;
 
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.service.AudioService;
-import com.gyeongditor.storyfield.swagger.AudioApi;
+import com.gyeongditor.storyfield.swagger.api.AudioApi;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
