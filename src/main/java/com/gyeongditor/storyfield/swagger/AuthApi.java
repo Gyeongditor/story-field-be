@@ -4,6 +4,7 @@ import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.dto.UserDTO.LoginDTO;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +17,11 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public interface AuthApi {
 
-    @Operation(summary = "로그인", description = "이메일과 비밀번호를 통해 로그인합니다.")
+    @Operation(
+            summary = "로그인",
+            description = "이메일과 비밀번호를 통해 로그인합니다.",
+            security = {} // 로그인은 인증 불필요
+    )
     @ApiErrorExample({
             ErrorCode.AUTH_401_009, // 아이디/비밀번호 불일치
             ErrorCode.USER_403_003, // 계정 미활성 (이메일 인증 미완료)
@@ -29,7 +34,11 @@ public interface AuthApi {
             HttpServletResponse response
     );
 
-    @Operation(summary = "로그아웃", description = "Refresh Token을 통해 로그아웃합니다.")
+    @Operation(
+            summary = "로그아웃",
+            description = "Refresh Token을 통해 로그아웃합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")} // 인증 필요
+    )
     @ApiErrorExample({
             ErrorCode.AUTH_401_003, // 토큰 없음
             ErrorCode.AUTH_401_004, // 토큰 유효하지 않음
@@ -41,7 +50,11 @@ public interface AuthApi {
             @RequestHeader(name = "Refresh-Token") String refreshToken
     );
 
-    @Operation(summary = "AccessToken 재발급", description = "쿠키에 저장된 RefreshToken을 이용하여 AccessToken을 재발급합니다.")
+    @Operation(
+            summary = "AccessToken 재발급",
+            description = "쿠키에 저장된 RefreshToken을 이용하여 AccessToken을 재발급합니다.",
+            security = {} // Refresh 기반 재발급은 보통 public 엔드포인트
+    )
     @ApiErrorExample({
             ErrorCode.AUTH_401_003, // 토큰 없음
             ErrorCode.AUTH_401_004, // 토큰 유효하지 않음

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
@@ -16,7 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/audio")
 public interface AudioApi {
 
-    @Operation(summary = "오디오 업로드", description = "Multipart 형식으로 오디오 파일을 업로드하고, 업로드된 오디오의 S3 URL을 반환합니다.")
+    @Operation(
+            summary = "오디오 업로드",
+            description = "Multipart 형식으로 오디오 파일을 업로드하고, 업로드된 오디오의 S3 URL을 반환합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
     @ApiErrorExample({
             ErrorCode.AUDIO_400_001, // 파일 비어 있음
             ErrorCode.AUDIO_400_002, // 허용되지 않은 형식
@@ -33,7 +38,11 @@ public interface AudioApi {
             HttpServletRequest request
     );
 
-    @Operation(summary = "오디오 URL 조회", description = "S3에 업로드된 오디오 파일명을 통해 정적 URL을 반환합니다.")
+    @Operation(
+            summary = "오디오 URL 조회",
+            description = "S3에 업로드된 오디오 파일명을 통해 정적 URL을 반환합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
     @ApiErrorExample({
             ErrorCode.AUDIO_404_001, // 오디오 파일 없음
             ErrorCode.AUDIO_500_003  // URL 조회 실패
@@ -44,7 +53,11 @@ public interface AudioApi {
             @Parameter(description = "Bearer AccessToken", required = true) HttpServletRequest request
     );
 
-    @Operation(summary = "다운로드용 Presigned URL 발급", description = "private 버킷에서 오디오 파일을 GET으로 내려받기 위한 Presigned URL을 발급합니다.")
+    @Operation(
+            summary = "다운로드용 Presigned URL 발급",
+            description = "private 버킷에서 오디오 파일을 GET으로 내려받기 위한 Presigned URL을 발급합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
     @ApiErrorExample({
             ErrorCode.AUDIO_404_001, // 오디오 파일 없음
             ErrorCode.AUDIO_500_004  // Presigned URL 생성 실패
@@ -55,7 +68,11 @@ public interface AudioApi {
             @Parameter(description = "Bearer AccessToken", required = true) HttpServletRequest request
     );
 
-    @Operation(summary = "오디오 삭제", description = "S3에 업로드된 오디오 파일명을 기반으로 삭제합니다.")
+    @Operation(
+            summary = "오디오 삭제",
+            description = "S3에 업로드된 오디오 파일명을 기반으로 삭제합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
     @ApiErrorExample({
             ErrorCode.AUDIO_404_001, // 오디오 파일 없음
             ErrorCode.AUDIO_500_002  // 삭제 중 오류

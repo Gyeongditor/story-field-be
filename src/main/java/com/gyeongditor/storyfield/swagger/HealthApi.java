@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/api/health")
 public interface HealthApi {
 
-    @Operation(summary = "헬스 체크", description = "간단한 200 OK 확인용 API.")
+    @Operation(
+            summary = "헬스 체크",
+            description = "서버가 정상적으로 동작 중인지 확인합니다. 인증이 필요하지 않습니다."
+    )
     @ApiErrorExample({
             ErrorCode.SERVER_500_001, // 내부 서버 오류
             ErrorCode.SERVER_503_001  // 서버 과부하
