@@ -1,4 +1,4 @@
-package com.gyeongditor.storyfield.swagger;
+package com.gyeongditor.storyfield.swagger.config;
 
 import com.gyeongditor.storyfield.response.ErrorCode;
 import java.lang.annotation.*;
