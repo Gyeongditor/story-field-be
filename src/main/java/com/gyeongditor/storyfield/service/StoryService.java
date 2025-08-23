@@ -19,10 +19,16 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.zip.GZIPInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -40,42 +46,50 @@ public class StoryService {
     public ApiResponseDTO<String> saveStoryFromFastApi(
             HttpServletRequest request,
             String saveStoryDtoString,
-            MultipartFile thumbnail,
-            List<MultipartFile> pageImages
+            MultipartFile thumbnailGz,
+            List<MultipartFile> pageImagesGz
     ) throws IOException {
-        // 1. 토큰 → User 조회
-        String accessToken = authService.extractAccessToken(request);
-        User user = userService.getUserFromToken(accessToken);
 
-        // 2. DTO 변환 (JSON → SaveStoryDTO)
-        SaveStoryDTO saveStoryDTO;
+        // 1) 토큰 → 유저
+        final String accessToken = authService.extractAccessToken(request);
+        final User user = userService.getUserFromToken(accessToken);
+
+        // 2) DTO 파싱
+        final SaveStoryDTO saveStoryDTO;
         try {
             saveStoryDTO = objectMapper.readValue(saveStoryDtoString, SaveStoryDTO.class);
         } catch (IOException e) {
             throw new CustomException(ErrorCode.REQ_400_001, "스토리 데이터 변환 실패");
         }
 
-        // 3. 썸네일 파일 업로드
-        String thumbnailFileName = s3Service.uploadThumbnailFile(thumbnail, accessToken);
+        // 3) thumbnail.gz → PNG 바이트 → S3 업로드
+        final byte[] thumbnailPngBytes = gunzipToBytes(thumbnailGz);
+        final String thumbnailKey = uploadPngWithUuidNaming(thumbnailGz.getOriginalFilename(), thumbnailPngBytes);
 
-        // 4. 스토리 페이지 이미지 파일 업로드
-        List<String> pageImageFileNames = s3Service.uploadFiles(pageImages, accessToken);
+        // 4) pages.gz 리스트 → PNG 바이트들 → S3 업로드
+        final List<String> pageImageKeys = new ArrayList<>();
+        for (MultipartFile gz : pageImagesGz) {
+            byte[] png = gunzipToBytes(gz);
+            pageImageKeys.add(uploadPngWithUuidNaming(gz.getOriginalFilename(), png));
+        }
 
-        // 5. Story 엔티티 생성
-        Story story = Story.builder()
+        // 5) 페이지 수 검증 (DTO vs 파일 수)
+        final List<StoryPageDTO> pages = saveStoryDTO.getPages();
+        if (pages.size() != pageImageKeys.size()) {
+            throw new CustomException(ErrorCode.STORY_400_001,
+                    String.format("페이지 수(%d)와 이미지 파일 수(%d)가 일치하지 않습니다.", pages.size(), pageImageKeys.size()));
+        }
+
+        // 6) Story 엔티티 생성
+        final Story story = Story.builder()
                 .storyId(UUID.randomUUID())
                 .user(user)
                 .storyTitle(saveStoryDTO.getStoryTitle())
-                .thumbnailFileName(thumbnailFileName)
+                .thumbnailFileName(thumbnailKey)
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        // 6. StoryPage 매핑
-        List<StoryPageDTO> pages = saveStoryDTO.getPages();
-        if (pages.size() != pageImageFileNames.size()) {
-            throw new CustomException(ErrorCode.STORY_400_001, "페이지 수와 이미지 파일 수가 일치하지 않습니다.");
-        }
-
+        // 7) StoryPage 매핑
         for (int i = 0; i < pages.size(); i++) {
             StoryPageDTO req = pages.get(i);
             story.getPages().add(
@@ -83,16 +97,63 @@ public class StoryService {
                             .story(story)
                             .pageNumber(req.getPageNumber())
                             .content(req.getContent())
-                            .imageFileName(pageImageFileNames.get(i))
+                            .imageFileName(pageImageKeys.get(i))
                             .build()
             );
         }
 
-        // 7. 저장
+        // 8) 저장
         storyRepository.save(story);
 
-        // 8. 응답
+        // 9) 응답
         return ApiResponseDTO.success(SuccessCode.STORY_201_001, "이야기를 저장했습니다.");
+    }
+
+    /** gzip 단일 파일 해제 → 바이트 */
+    private byte[] gunzipToBytes(MultipartFile gzFile) {
+        if (gzFile == null || gzFile.isEmpty()) {
+            throw new CustomException(ErrorCode.REQ_400_001, "빈 gzip 파일입니다.");
+        }
+        try (InputStream in = gzFile.getInputStream();
+             GZIPInputStream gzin = new GZIPInputStream(in);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            gzin.transferTo(bos);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.REQ_400_001,
+                    "gzip 해제 실패: " + safeName(gzFile.getOriginalFilename()));
+        }
+    }
+
+    /** 파일명 규칙 적용 후 PNG 업로드 */
+    private String uploadPngWithUuidNaming(String originalGzName, byte[] pngBytes) throws IOException {
+        String base = stripGzExtension(safeName(originalGzName)); // foo.png.gz → foo.png
+        String ensuredPng = ensurePngExtension(base);             // foo → foo.png (확장자 보정)
+        String objectKey = UUID.randomUUID() + "_" + ensuredPng;
+
+        // Content-Type 고정: PNG
+        return s3Service.uploadBytes(pngBytes, objectKey, "image/png");
+    }
+
+    private static String safeName(String name) {
+        if (name == null || name.isBlank()) return "file.png.gz";
+        // 경로 조작 방지: 마지막 요소만 취급
+        return Paths.get(name).getFileName().toString();
+    }
+
+    private static String stripGzExtension(String name) {
+        if (name.toLowerCase(Locale.ROOT).endsWith(".gz")) {
+            return name.substring(0, name.length() - 3); // drop ".gz"
+        }
+        return name;
+    }
+
+    private static String ensurePngExtension(String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".png")) return name;
+        // 만약 원본이 .webp.gz였지만 "PNG로 변환" 정책이라면 서버에서 실제 포맷 변환이 필요합니다.
+        // 현재 구현은 "FastAPI가 PNG를 gzip" 한다는 전제를 두므로 확장자만 보정합니다.
+        return name + ".png";
     }
 
     // 스토리 페이지 조회
