@@ -9,6 +9,7 @@ import com.gyeongditor.storyfield.swagger.config.ApiErrorResponse;
 import com.gyeongditor.storyfield.swagger.config.ApiSuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Story", description = "이야기")
 @RequestMapping
 public interface StoryApi {
 
