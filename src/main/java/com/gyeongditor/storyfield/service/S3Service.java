@@ -5,6 +5,7 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.gyeongditor.storyfield.config.AwsProperties;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
@@ -14,13 +15,14 @@ import com.gyeongditor.storyfield.response.SuccessCode;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ public class S3Service {
     private final AwsProperties awsProperties;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
+    @Value("${aws.s3.bucket}") private String bucket;
 
     // 오디오 허용 MIME 타입
     private static final Set<String> ALLOWED_AUDIO_TYPES = Set.of(
@@ -287,4 +290,14 @@ public class S3Service {
         }
     }
 
+    public String uploadBytes(byte[] bytes, String objectKey, String contentType) throws IOException {
+        // accessToken 유효성 검증(필요시): jwtTokenProvider.validateOrThrow(accessToken);
+        ObjectMetadata meta = new ObjectMetadata();
+        meta.setContentType(contentType);
+        meta.setContentLength(bytes.length);
+        try (InputStream in = new ByteArrayInputStream(bytes)) {
+            amazonS3.putObject(new PutObjectRequest(bucket, objectKey, in, meta));
+        }
+        return objectKey; // DB 저장용 key 반환
+    }
 }
