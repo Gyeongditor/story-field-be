@@ -18,7 +18,7 @@ public class FastApiClient {
 
     public String ping() {
         return fastApiWebClient.get()
-                .uri("/ping")
+                .uri("/api/health")
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
