@@ -25,6 +25,6 @@ public interface HealthApi {
             ErrorCode.SERVER_500_001, // 내부 서버 오류
             ErrorCode.SERVER_503_001  // 서버 과부하
     })
-    @GetMapping("/ping")
+    @GetMapping()
     ApiResponseDTO<String> ping();
 }
