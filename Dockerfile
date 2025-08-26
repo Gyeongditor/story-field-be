@@ -1,46 +1,20 @@
+# 런타임만 필요하니 JRE 슬림으로
 FROM openjdk:17-jdk-slim
 
 WORKDIR /app
-COPY build/libs/storyfield-0.0.1-SNAPSHOT.jar /app.jar
-COPY wait-for-it.sh ./wait-for-it.sh
 
-RUN chmod +x ./wait-for-it.sh && \
-    apt-get update && apt-get install -y netcat bash && rm -rf /var/lib/apt/lists/*
+# JAR & wait-for-it 스크립트만 포함
+COPY build/libs/storyfield-*.jar /app/app.jar
+COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
 
-# Build-time args
-ARG SPRING_DATASOURCE_URL
-ARG SPRING_DATASOURCE_USERNAME
-ARG SPRING_DATASOURCE_PASSWORD
-ARG JWT_SECRET
-ARG SPRING_EMAIL_USERNAME
-ARG SPRING_EMAIL_PASSWORD
-# OAuth2
-ARG GOOGLE_CLIENT_ID
-ARG GOOGLE_CLIENT_SECRET
-ARG KAKAO_CLIENT_ID
-ARG KAKAO_CLIENT_SECRET
-ARG NAVER_CLIENT_ID
-ARG NAVER_CLIENT_SECRET
-# S3
-ARG S3_ACCESSKEY
-ARG S3_SECRETKEY
+RUN chmod +x /usr/local/bin/wait-for-it.sh \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends netcat bash \
+ && rm -rf /var/lib/apt/lists/*
 
-# ARG -> ENV 매핑
-ENV SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
-ENV SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
-ENV SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
-ENV JWT_SECRET=${JWT_SECRET}
-ENV SPRING_EMAIL_USERNAME=${SPRING_EMAIL_USERNAME}
-ENV SPRING_EMAIL_PASSWORD=${SPRING_EMAIL_PASSWORD}
+# 비밀/환경값은 절대 이미지에 넣지 않음
+EXPOSE 8080
+USER 1001
 
-ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-ENV GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-ENV KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
-ENV KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
-ENV NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
-ENV NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
-
-ENV S3_ACCESSKEY=${S3_ACCESSKEY}
-ENV S3_SECRETKEY=${S3_SECRETKEY}
-
-CMD ["./wait-for-it.sh", "mysql:3306", "--timeout", "30", "--", "java", "-jar", "/app.jar"]
+# DB 준비될 때까지 대기 (DB_HOST/DB_PORT는 .env에서 주입)
+ENTRYPOINT ["sh","-c","wait-for-it.sh ${DB_HOST:-mysql}:${DB_PORT:-3306} --timeout 60 -- java -jar /app/app.jar"]
