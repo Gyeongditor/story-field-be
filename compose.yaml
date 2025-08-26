@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   mysql:
@@ -13,16 +13,52 @@ services:
     container_name: storyfield-redis
     depends_on:
       - mysql
+    restart: unless-stopped
     ports:
       - "8379:6379"
 
+  fastapi:
+    image: gyeongditorai/story-field-ai:latest
+    container_name: storyfield-fastapi
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    # FastAPI가 .env 필요하면 주석 해제
+    # env_file:
+    #   - ./.env
+
   app:
-    image: gyeongditor/storyfield:latest
+    image: gyeongditor/story-field-be:latest
     container_name: storyfield-app
     depends_on:
       - mysql
+      - redis
+      - fastapi
     restart: unless-stopped
     ports:
       - "9080:8080"
+    # 여기서 .env를 컨테이너 환경으로 주입
+    env_file:
+      - ./.env
+    # DB/FastAPI 준비될 때까지 대기 후 실행 (wait-for-it.sh 불필요)
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql
+      DB_PORT: "3306"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "🔎 checking MySQL at ${DB_HOST}:${DB_PORT}"
+        until nc -z "$$DB_HOST" "$$DB_PORT"; do
+          echo "⏳ waiting for MySQL..."
+          sleep 1
+        done
+        echo "✅ MySQL OK"
+        echo "🔎 checking FastAPI at fastapi:8000"
+        until nc -z fastapi 8000; do
+          echo "⏳ waiting for FastAPI..."
+          sleep 1
+        done
+        echo "✅ FastAPI OK"
+        exec java -jar /app/app.jar
