@@ -1,6 +1,5 @@
 package com.gyeongditor.storyfield.Controller;
 
-import com.gyeongditor.storyfield.config.FastApiClient;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryPageResponseDTO;
 import com.gyeongditor.storyfield.dto.Story.StoryThumbnailResponseDTO;
@@ -9,10 +8,10 @@ import com.gyeongditor.storyfield.service.StoryService;
 import com.gyeongditor.storyfield.swagger.api.StoryApi;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,15 +20,14 @@ import java.util.UUID;
 public class StoryController implements StoryApi {
 
     private final StoryService storyService;
-    private final FastApiClient fastApiClient;
 
+    @SneakyThrows
     @Override
     public ApiResponseDTO<String> saveStory(HttpServletRequest request,
                                             String saveStoryDtoString,
                                             MultipartFile thumbnail,
                                             List<MultipartFile> pageImages) {
-        String response = fastApiClient.saveStory(saveStoryDtoString, thumbnail, pageImages);
-        return ApiResponseDTO.success(SuccessCode.SUCCESS_200_001, response);
+        return storyService.saveStoryFromFastApi(request,saveStoryDtoString, thumbnail, pageImages);
     }
     @Override
     public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(HttpServletRequest request, UUID storyId) {
