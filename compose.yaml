@@ -23,9 +23,8 @@ services:
     restart: unless-stopped
     ports:
       - "8001:8000"
-    # FastAPI가 .env 필요하면 주석 해제
-    # env_file:
-    #   - ./.env
+    env_file:
+      - ./.env
 
   app:
     image: gyeongditor/story-field-be:latest

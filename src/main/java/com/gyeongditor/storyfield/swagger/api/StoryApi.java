@@ -37,7 +37,7 @@ public interface StoryApi {
             ErrorCode.FILE_413_002,  // 파일 크기 초과
             ErrorCode.SERVER_500_001 // 내부 서버 오류
     })
-    @PostMapping(value = "/stories/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/v1/stories/from-text", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ApiResponseDTO<String> saveStory(
             HttpServletRequest request,
             @RequestPart("saveStoryDTO") String saveStoryDtoString,
