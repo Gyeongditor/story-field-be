@@ -110,7 +110,7 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService {
 
     @Override
     public CustomUserDetails loadUserByUUID(String uuid) {
-        User user = userRepository.findById(UUID.fromString(uuid))
+        User user = userRepository.findById(uuid)
                 .orElseThrow(() -> new CustomException(
                         ErrorCode.USER_404_001,
                         "사용자를 찾을 수 없습니다."
