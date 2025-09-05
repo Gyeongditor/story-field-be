@@ -22,8 +22,8 @@ public class User {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "user_id", columnDefinition = "BINARY(16)")
-    private UUID userId;
+    @Column(name = "user_id", length = 36, nullable = false, updatable = false)
+    private String userId;
 
     @Column(nullable = false)
     private String email;
