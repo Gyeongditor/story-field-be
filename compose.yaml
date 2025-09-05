@@ -11,6 +11,7 @@ services:
       - ./.env
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   redis:
     image: gyeongditor/storyfield-redis:latest
