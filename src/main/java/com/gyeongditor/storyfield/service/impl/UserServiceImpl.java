@@ -107,7 +107,7 @@ public class UserServiceImpl implements UserService {
     public ApiResponseDTO<Void> deleteUserByAccessToken(HttpServletRequest request) {
         String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
-        userRepository.deleteById(user.getUserId());
+        userRepository.deleteById(UUID.fromString(user.getUserId()));
         return ApiResponseDTO.success(SuccessCode.USER_204_001, null);
     }
 
