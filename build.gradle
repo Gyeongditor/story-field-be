@@ -51,7 +51,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // DB
-    runtimeOnly 'com.mysql:mysql-connector-j'
+      runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
 
     // Docker Compose (개발용)
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'

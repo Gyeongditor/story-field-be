@@ -1,18 +1,22 @@
 version: "3.8"
 
 services:
-  mysql:
-    image: gyeongditor/mysql-custom:latest
-    container_name: storyfield-mysql
+  mariadb:
+    image: gyeongditor/mariadb:11.4
+    container_name: storyfield-mariadb
     restart: unless-stopped
     ports:
-      - "4307:3306"
+      - "4306:3306"
+    env_file:
+      - ./.env
+    volumes:
+      - mariadb_data:/var/lib/mysql
 
   redis:
     image: gyeongditor/storyfield-redis:latest
     container_name: storyfield-redis
     depends_on:
-      - mysql
+      - mariadb
     restart: unless-stopped
     ports:
       - "8379:6379"
@@ -30,30 +34,28 @@ services:
     image: gyeongditor/story-field-be:latest
     container_name: storyfield-app
     depends_on:
-      - mysql
+      - mariadb
       - redis
       - fastapi
     restart: unless-stopped
     ports:
       - "9080:8080"
-    # 여기서 .env를 컨테이너 환경으로 주입
     env_file:
       - ./.env
-    # DB/FastAPI 준비될 때까지 대기 후 실행 (wait-for-it.sh 불필요)
     environment:
-      DB_HOST: mysql
+      DB_HOST: mariadb
       DB_PORT: "3306"
     entrypoint:
       - sh
       - -c
       - |
         set -e
-        echo "🔎 checking MySQL at ${DB_HOST}:${DB_PORT}"
+        echo "🔎 checking MariaDB at ${DB_HOST}:${DB_PORT}"
         until nc -z "$$DB_HOST" "$$DB_PORT"; do
-          echo "⏳ waiting for MySQL..."
+          echo "⏳ waiting for MariaDB..."
           sleep 1
         done
-        echo "✅ MySQL OK"
+        echo "✅ MariaDB OK"
         echo "🔎 checking FastAPI at fastapi:8000"
         until nc -z fastapi 8000; do
           echo "⏳ waiting for FastAPI..."
@@ -61,3 +63,6 @@ services:
         done
         echo "✅ FastAPI OK"
         exec java -jar /app/app.jar
+
+volumes:
+  mariadb_data:
