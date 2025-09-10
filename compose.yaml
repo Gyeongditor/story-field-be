@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   mariadb:
-    image: gyeongditor/mariadb:11.4
+    image: mariadb:11.4
     container_name: storyfield-mariadb
     restart: unless-stopped
     ports:
