@@ -90,18 +90,20 @@ public class UserServiceImpl implements UserService {
         String accessToken = jwtTokenProvider.resolveToken(request);
         User user = getUserFromToken(accessToken);
 
+        // 이메일 변경 여부는 굳이 체크 안 하고, 토큰 발급 여부로만 분기
+        String verificationToken = null;
         if (!user.getEmail().equals(updateUserDTO.getEmail())) {
-            // 이메일 변경 시 인증 로직 추가 가능
+            verificationToken = UUID.randomUUID().toString();
+            sendEmail(updateUserDTO.getEmail(), verificationToken, "회원 정보 수정용 이메일 인증");
         }
 
-        String verificationToken = UUID.randomUUID().toString();
         user.updateUser(updateUserDTO, passwordEncoder, verificationToken);
-        sendEmail(user.getEmail(), verificationToken, "회원 정보 수정용 이메일 인증");
-
         userRepository.save(user);
+
         UserResponseDTO dto = new UserResponseDTO(user.getEmail(), user.getUsername());
         return ApiResponseDTO.success(SuccessCode.USER_200_002, dto);
     }
+
 
     @Override
     public ApiResponseDTO<Void> deleteUserByAccessToken(HttpServletRequest request) {

@@ -54,14 +54,18 @@ public class User {
     public void updateUser(UpdateUserDTO updateUserDTO, PasswordEncoder passwordEncoder, String mailVerificationToken) {
         this.username = updateUserDTO.getUsername();
         this.email = updateUserDTO.getEmail();
-        this.mailVerificationToken = mailVerificationToken;
-        this.enabled = false;
 
-        // 새로운 비밀번호가 null이 아니고, 기존 비밀번호와 다를 때만 인코딩하여 업데이트
+        // 이메일이 변경된 경우에만 인증 토큰과 enabled 상태 갱신
+        if (mailVerificationToken != null) {
+            this.mailVerificationToken = mailVerificationToken;
+            this.enabled = false;
+        }
+
         if (updateUserDTO.getPassword() != null && !updateUserDTO.getPassword().equals(this.password)) {
             this.password = passwordEncoder.encode(updateUserDTO.getPassword());
         }
     }
+    
 
     public void updateOAuthUser(String username, String email, String socialType, String socialId) {
         this.username = username;
