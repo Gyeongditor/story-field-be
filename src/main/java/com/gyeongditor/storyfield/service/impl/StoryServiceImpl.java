@@ -22,6 +22,9 @@ import com.gyeongditor.storyfield.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +35,8 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.zip.GZIPInputStream;
 
 @Service
@@ -45,6 +50,11 @@ public class StoryServiceImpl implements StoryService {
     private final UserService userService;
     private final AuthService authService;
     private final ObjectMapper objectMapper;
+    
+    // 스토리 이미지 업로드용 TaskExecutor 주입 (@Autowired로 안전하게)
+    @Autowired
+    @Qualifier("storyImageTaskExecutor")
+    private TaskExecutor taskExecutor;
 
     @Override
     @Transactional
@@ -65,13 +75,44 @@ public class StoryServiceImpl implements StoryService {
             throw new CustomException(ErrorCode.REQ_400_001, "스토리 데이터 변환 실패");
         }
 
-        final byte[] thumbnailPngBytes = gunzipToBytes(thumbnailGz);
-        final String thumbnailKey = uploadPngWithUuidNaming(thumbnailGz.getOriginalFilename(), thumbnailPngBytes);
+        // 썸네일 업로드 → 비동기 처리
+        CompletableFuture<String> thumbnailFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                byte[] png = gunzipToBytes(thumbnailGz);
+                return uploadPngWithUuidNaming(thumbnailGz.getOriginalFilename(), png);
+            } catch (IOException e) {
+                throw new CompletionException("썸네일 업로드 실패", e);
+            }
+        }, taskExecutor);
 
-        final List<String> pageImageKeys = new ArrayList<>();
-        for (MultipartFile gz : pageImagesGz) {
-            byte[] png = gunzipToBytes(gz);
-            pageImageKeys.add(uploadPngWithUuidNaming(gz.getOriginalFilename(), png));
+        // 스토리 페이지 이미지 업로드 → 비동기 처리
+        List<CompletableFuture<String>> pageImageFutures = pageImagesGz.stream()
+            .map(gz -> CompletableFuture.supplyAsync(() -> {
+                try {
+                    byte[] png = gunzipToBytes(gz);
+                    return uploadPngWithUuidNaming(gz.getOriginalFilename(), png);
+                } catch (IOException e) {
+                    throw new CompletionException("페이지 이미지 업로드 실패: " + gz.getOriginalFilename(), e);
+                }
+            }, taskExecutor))
+            .toList();
+
+        // 모든 업로드 완료 후 결과 수집 (join())
+        final String thumbnailKey;
+        final List<String> pageImageKeys;
+        
+        try {
+            thumbnailKey = thumbnailFuture.join();
+            pageImageKeys = pageImageFutures.stream()
+                .map(CompletableFuture::join)
+                .toList();
+        } catch (CompletionException e) {
+            // 업로드 실패 시 명확한 오류 코드와 메시지 반환
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException) {
+                throw new CustomException(ErrorCode.FILE_500_001, "이미지 업로드 중 오류 발생: " + e.getMessage());
+            }
+            throw new CustomException(ErrorCode.SERVER_500_001, "이미지 처리 중 예기치 않은 오류 발생: " + e.getMessage());
         }
 
         final List<StoryPageDTO> pages = saveStoryDTO.getPages();
