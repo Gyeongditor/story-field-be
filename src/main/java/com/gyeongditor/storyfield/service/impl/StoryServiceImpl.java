@@ -117,50 +117,18 @@ public class StoryServiceImpl implements StoryService {
             final long uploadDuration = System.currentTimeMillis() - uploadStartTime;
             log.info("전체이미지업로드완료 userId={} uploadCount={} duration={}ms", 
                 user.getUserId(), 1 + pageImagesGz.size(), uploadDuration);
-                
+
         } catch (CompletionException e) {
             final long uploadDuration = System.currentTimeMillis() - uploadStartTime;
-            log.error("전체이미지업로드실패 userId={} duration={}ms error={}", 
-                user.getUserId(), uploadDuration, e.getMessage());
-                
-            // 업로드 실패 시 구체적인 오류 코드와 메시지 반환
-            Throwable cause = e.getCause();
-            String errorMessage = e.getMessage();
-            
-            if (cause instanceof IOException) {
-                // GZIP 해제 실패
-                if (errorMessage.contains("gzip 해제 실패")) {
-                    throw new CustomException(ErrorCode.STORY_400_002, "압축 파일 형식이 올바르지 않습니다");
-                }
-                // 파일 크기 문제
-                else if (errorMessage.contains("크기") || errorMessage.contains("size")) {
-                    throw new CustomException(ErrorCode.STORY_413_001, "이미지 파일 크기가 너무 큽니다");
-                }
-                // 썸네일 업로드 실패
-                else if (errorMessage.contains("썸네일")) {
-                    throw new CustomException(ErrorCode.STORY_500_001, "썸네일 업로드에 실패했습니다");
-                }
-                // 스토리 페이지 이미지 업로드 실패
-                else if (errorMessage.contains("페이지 이미지")) {
-                    throw new CustomException(ErrorCode.STORY_500_002, "스토리 이미지 업로드에 실패했습니다");
-                }
-                // 일반적인 파일 업로드 실패
-                else {
-                    throw new CustomException(ErrorCode.FILE_500_001, "파일 업로드에 실패했습니다");
-                }
-            } else if (cause instanceof CustomException) {
-                // 이미 정의된 커스텀 예외는 그대로 전파
-                throw (CustomException) cause;
-            } else if (cause instanceof SecurityException) {
-                // 파일 접근 권한 문제
-                throw new CustomException(ErrorCode.STORY_500_004, "파일 접근 권한이 없습니다");
-            } else if (cause instanceof OutOfMemoryError) {
-                // 메모리 부족
-                throw new CustomException(ErrorCode.SERVER_500_001, "서버 리소스가 부족합니다");
-            } else {
-                // 예상치 못한 오류 (로그에만 상세 정보 기록)
-                throw new CustomException(ErrorCode.SERVER_500_001, "파일 처리 중 오류가 발생했습니다");
+            log.error("전체이미지업로드실패 userId={} duration={}ms", user.getUserId(), uploadDuration, e);
+
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+
+            if (cause instanceof CustomException custom) {
+                throw custom;
             }
+            // 분기 없이 그대로 위로 올림
+            throw e;
         }
 
         // 2단계: DB 저장 (트랜잭션 내에서 처리)
