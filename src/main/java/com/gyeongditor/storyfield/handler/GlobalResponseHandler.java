@@ -26,6 +26,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.io.IOException;
+import java.util.concurrent.CompletionException;
 
 @Slf4j
 @RestControllerAdvice
@@ -46,6 +47,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     private final PolicyErrorMapper policyErrorMapper;
     private final BusinessErrorMapper businessErrorMapper;
     private final FallbackErrorMapper fallbackErrorMapper;
+    private final StoryErrorMapper storyErrorMapper;
 
     // 성공 응답 래핑
     @Override
@@ -191,5 +193,15 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
         var mapped = fallbackErrorMapper.map(ex);
         log.error("[Unhandled] {} - {}", mapped.code().getCode(), mapped.message(), ex);
         return ResponseEntity.status(mapped.code().getStatus()).body(ApiResponseDTO.error(mapped.code(), mapped.message()));
+    }
+
+    @ExceptionHandler(CompletionException.class)
+    public ResponseEntity<ApiResponseDTO<Object>> onStory(CompletionException ex) {
+        Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+        var mapped = storyErrorMapper.map(cause);
+        log.error("[Story] {} - {}", mapped.code().getCode(), mapped.message(), ex);
+        return ResponseEntity
+                .status(mapped.code().getStatus())
+                .body(ApiResponseDTO.error(mapped.code(), mapped.message()));
     }
 }
