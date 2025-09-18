@@ -1,73 +1,31 @@
 package com.gyeongditor.storyfield.service;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.gyeongditor.storyfield.config.AwsProperties;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
-import com.gyeongditor.storyfield.jwt.JwtTokenProvider;
-import com.gyeongditor.storyfield.response.SuccessCode;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.UUID;
+import java.util.List;
 
-@Service
-@RequiredArgsConstructor
-public class S3Service {
+public interface S3Service {
 
-    private final AmazonS3 amazonS3;
-    private final AwsProperties awsProperties;
-    private final JwtTokenProvider jwtTokenProvider;
+    ApiResponseDTO<String> generatePresignedUrl(String fileName, String accessToken);
 
-    public ApiResponseDTO<String> generatePresignedUrl(String fileName, String accessToken) {
-        jwtTokenProvider.validateOrThrow(accessToken);
+    List<String> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException;
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(awsProperties.getRegion())
-                .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(
-                                awsProperties.getAccessKey(),
-                                awsProperties.getSecretKey()
-                        ))).build();
+    String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException;
 
-        Date expiration = new Date(System.currentTimeMillis() + 600 * 1000);
-        String presignedUrl = s3Client.generatePresignedUrl(awsProperties.getBucket(), fileName, expiration).toString();
+    ApiResponseDTO<String> uploadAudioFile(MultipartFile file, String accessToken);
 
-        return ApiResponseDTO.success(SuccessCode.FILE_200_002, presignedUrl);
-    }
+    ApiResponseDTO<String> getFileUrlResponse(String fileName, HttpServletRequest request);
 
-    public ApiResponseDTO<String> uploadFile(MultipartFile file, String accessToken) throws IOException {
-        jwtTokenProvider.validateOrThrow(accessToken);
+    ApiResponseDTO<Void> deleteFile(String fileName, HttpServletRequest request);
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+    ApiResponseDTO<String> getAudioFileUrl(String fileName, String accessToken);
 
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(file.getSize());
-        metadata.setContentType(file.getContentType());
+    ApiResponseDTO<Void> deleteAudioFile(String fileName, String accessToken);
 
-        amazonS3.putObject(awsProperties.getBucket(), fileName, file.getInputStream(), metadata);
+    ApiResponseDTO<String> generateDownloadPresignedUrl(String keyOrFileName, String accessToken);
 
-        return ApiResponseDTO.success(SuccessCode.FILE_200_001, getFileUrl(fileName));
-    }
-
-    public ApiResponseDTO<String> getFileUrlResponse(String fileName, String accessToken) {
-        jwtTokenProvider.validateOrThrow(accessToken);
-        return ApiResponseDTO.success(SuccessCode.FILE_200_003, getFileUrl(fileName));
-    }
-
-    public ApiResponseDTO<Void> deleteFile(String fileName, String accessToken) {
-        jwtTokenProvider.validateOrThrow(accessToken);
-        amazonS3.deleteObject(awsProperties.getBucket(), fileName);
-        return ApiResponseDTO.success(SuccessCode.FILE_204_001, null);
-    }
-
-    private String getFileUrl(String fileName) {
-        return amazonS3.getUrl(awsProperties.getBucket(), fileName).toString();
-    }
+    String uploadBytes(byte[] bytes, String objectKey, String contentType) throws IOException;
 }

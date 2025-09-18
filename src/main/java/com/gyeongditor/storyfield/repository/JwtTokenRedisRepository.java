@@ -11,7 +11,27 @@ import java.util.concurrent.TimeUnit;
 public class JwtTokenRedisRepository {
 
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
+    private static final String REFRESH_KEY_PREFIX = "jwt:refresh:"; // ★ 추가
     private final RedisTemplate<String, String> redisTemplate;
+
+
+    // RefreshToken 저장
+    public void saveRefreshToken(String userUUID, String refreshToken, long expireInSeconds) {
+        String key = REFRESH_KEY_PREFIX + userUUID;
+        redisTemplate.opsForValue().set(key, refreshToken, expireInSeconds, TimeUnit.SECONDS);
+    }
+
+    // RefreshToken 조회
+    public String getRefreshToken(String userUUID) {
+        String key = REFRESH_KEY_PREFIX + userUUID;
+        return redisTemplate.opsForValue().get(key);
+    }
+
+    // RefreshToken 삭제
+    public void deleteRefreshToken(String userUUID) {
+        String key = REFRESH_KEY_PREFIX + userUUID;
+        redisTemplate.delete(key);
+    }
 
     // 주어진 JWT 토큰을 블랙리스트에 추가한다. 이미 추가된 경우 false를 반환하고, 성공적으로 추가된 경우 true를 반환한다.
     public boolean addTokenToBlacklist(String tokenId, long expireInSeconds) {

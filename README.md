@@ -131,8 +131,8 @@ jwt:
 
 ## 📚 API 문서
 서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- OpenAPI 3 문서: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:9080/swagger-ui.html`
+- OpenAPI 3 문서: `http://localhost:9080/v3/api-docs`
 
 ## 🧪 테스트
 ```bash

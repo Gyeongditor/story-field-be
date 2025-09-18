@@ -15,7 +15,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    private final UUID userId; // 여기에 UUID 추가
+    private final String userId; // 여기에 UUID 추가
     private final String email;
     private final String password;
     private final String username;

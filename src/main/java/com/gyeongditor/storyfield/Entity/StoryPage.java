@@ -3,9 +3,6 @@ package com.gyeongditor.storyfield.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 @Entity
 @Getter
 @Builder
@@ -22,16 +19,17 @@ public class StoryPage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private int pageNumber;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    private String imageUrl;
+    // presignedUrl 대신 S3에 업로드된 실제 파일 이름만 저장
+    @Column(nullable = false)
+    private String imageFileName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "story_id")
     private Story story;
-
-
 }

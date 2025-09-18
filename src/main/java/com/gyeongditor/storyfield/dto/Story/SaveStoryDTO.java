@@ -14,8 +14,12 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "스토리 저장 요청 DTO")
 public class SaveStoryDTO {
+
     @Schema(description = "스토리 제목", example = "용감한 병아리의 모험")
     private String storyTitle;
+
+    @Schema(description = "스토리 썸네일 파일명", example = "thumb_1234.png")
+    private String thumbnailFileName;  // 추가
 
     @Schema(description = "스토리 페이지 리스트")
     private List<StoryPageDTO> pages;

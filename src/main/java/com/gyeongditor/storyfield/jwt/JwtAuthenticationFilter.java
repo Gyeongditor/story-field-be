@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gyeongditor.storyfield.Entity.CustomUserDetails;
 import com.gyeongditor.storyfield.dto.ApiResponseDTO;
 import com.gyeongditor.storyfield.exception.CustomException;
+import com.gyeongditor.storyfield.repository.JwtTokenRedisRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.service.CustomUserDetailsService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JwtTokenRedisRepository jwtTokenRedisRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,7 +38,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (accessToken != null) {
+                // 1. 서명/만료 검증
                 jwtTokenProvider.validateOrThrow(accessToken);
+
+                // 2. 블랙리스트 확인
+                Claims claims = jwtTokenProvider.parseClaims(accessToken);
+                String jti = claims.getId();
+                if (jwtTokenRedisRepository.isTokenBlacklisted(jti)) {
+                    throw new CustomException(ErrorCode.AUTH_401_008, "이미 로그아웃된 액세스 토큰입니다.");
+                }
+
+                // 3. 정상 인증 처리
                 authenticateWithToken(accessToken, request);
             }
 
@@ -47,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             writeJsonError(response, ErrorCode.AUTH_401_004, "유효하지 않은 인증 토큰입니다.");
         }
     }
+
 
     private void authenticateWithToken(String token, HttpServletRequest request) {
         String email = jwtTokenProvider.getEmail(token);
@@ -66,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtTokenProvider.validateRefreshOrThrow(refreshToken);
 
             if (jwtTokenProvider.isRefreshTokenBlacklisted(refreshToken)) {
-                throw new CustomException(ErrorCode.AUTH_401_008, "블랙리스트에 등록된 리프레시 토큰입니다.");
+                throw new CustomException(ErrorCode.AUTH_401_012, "블랙리스트에 등록된 액세스 토큰입니다.");
             }
 
             String newAccessToken = jwtTokenProvider.createTokenFromRefreshToken(refreshToken);

@@ -4,9 +4,11 @@ import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@AllArgsConstructor
+@NoArgsConstructor  // Jackson이 필요로 함
+@AllArgsConstructor // 생성자 기반 주입도 가능
 public class ApiResponseDTO<T> {
     private int status;        // HTTP 상태 코드
     private String code;       // 내부 커스텀 코드

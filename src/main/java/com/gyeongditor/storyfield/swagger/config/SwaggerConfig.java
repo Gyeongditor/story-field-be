@@ -1,4 +1,4 @@
-package com.gyeongditor.storyfield.config;
+package com.gyeongditor.storyfield.swagger.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -45,7 +45,7 @@ public class SwaggerConfig {
                         .title("이야기밭 API 문서")
                         .description("이야기밭 서비스 백엔드 API 명세서입니다.")
                         .version("v1.0")
-                        .contact(new Contact().name("StoryField Team").email("dev@storyfield.dev"))
+                        .contact(new Contact().name("StoryField Team").email("piseouk787@gmail.com"))
                         .license(new License().name("MIT")))
                 // 전역 태그 레지스트리  수정
                 .tags(List.of(
@@ -60,11 +60,17 @@ public class SwaggerConfig {
     }
 
     // 경로 기반 그룹  수정
-    @Bean public GroupedOpenApi allApis() {
+    @Bean
+    public GroupedOpenApi allApis(ApiSuccessExampleProcessor successProcessor,
+                                  ApiErrorExampleProcessor errorProcessor,
+                                  RemoveDefault200ResponseCustomizer remove200) {
         return GroupedOpenApi.builder()
                 .group("all")
                 .packagesToScan("com.gyeongditor.storyfield")
                 .pathsToMatch("/**")
+                .addOperationCustomizer(remove200)   // 기본 200 제거
+                .addOperationCustomizer(successProcessor) // 성공 응답 처리
+                .addOperationCustomizer(errorProcessor)   // 에러 응답 처리
                 .build();
     }
 

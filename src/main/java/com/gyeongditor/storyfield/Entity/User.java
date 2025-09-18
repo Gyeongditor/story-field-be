@@ -22,8 +22,8 @@ public class User {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "user_id", columnDefinition = "BINARY(16)")
-    private UUID userId;
+    @Column(name = "user_id", length = 36, nullable = false, updatable = false)
+    private String userId;
 
     @Column(nullable = false)
     private String email;
@@ -35,6 +35,7 @@ public class User {
     private String username;
 
     @CreationTimestamp // INSERT 쿼리가 발생할 때, 현재 시간을 자동으로 저장
+    @Column(nullable = false)
     private LocalDateTime created_at; // 회원가입한 시간
 
     @UpdateTimestamp // UPDATE 쿼리가 발생할 때, 현재 시간을 자동으로 저장
@@ -53,14 +54,18 @@ public class User {
     public void updateUser(UpdateUserDTO updateUserDTO, PasswordEncoder passwordEncoder, String mailVerificationToken) {
         this.username = updateUserDTO.getUsername();
         this.email = updateUserDTO.getEmail();
-        this.mailVerificationToken = mailVerificationToken;
-        this.enabled = false;
 
-        // 새로운 비밀번호가 null이 아니고, 기존 비밀번호와 다를 때만 인코딩하여 업데이트
+        // 이메일이 변경된 경우에만 인증 토큰과 enabled 상태 갱신
+        if (mailVerificationToken != null) {
+            this.mailVerificationToken = mailVerificationToken;
+            this.enabled = false;
+        }
+
         if (updateUserDTO.getPassword() != null && !updateUserDTO.getPassword().equals(this.password)) {
             this.password = passwordEncoder.encode(updateUserDTO.getPassword());
         }
     }
+    
 
     public void updateOAuthUser(String username, String email, String socialType, String socialId) {
         this.username = username;

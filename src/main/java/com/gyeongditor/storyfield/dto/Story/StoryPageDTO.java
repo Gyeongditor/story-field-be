@@ -17,6 +17,9 @@ public class StoryPageDTO {
     @Schema(description = "페이지 내용", example = "옛날 옛적에, 병아리가 숲 속을 걸었어요.")
     private String content;
 
-    @Schema(description = "페이지 이미지 URL", example = "https://example.com/images/page1.png")
-    private String imageUrl;
+    @Schema(description = "이미지 파일명", example = "xxx.png")
+    private String imageFileName;
+
+    @Schema(description = "썸네일 파일명", example = "thumb_page_1.png")
+    private String thumbnailFileName;  // ✅ 새 필드
 }
