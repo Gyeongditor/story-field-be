@@ -49,14 +49,14 @@ jobs:
           ls -al "$DEPLOY_DIR"
           test -f "$DEPLOY_DIR/docker-compose.yml"
 
-      # compose pull 대신 앱 이미지 한 개만 pull
-      - name: Pre-pull app image only (linux/arm64)
+      # 여기서 고정 이미지로 직접 pull
+      - name: Pull app image (fixed ref)
         timeout-minutes: 5
         run: |
           set -euxo pipefail
+          # 프록시 환경이면 잠깐 해제(느림 방지)
           unset HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy || true
-          echo "Pulling $IMAGE_REMOTE for linux/arm64"
-          docker pull --platform linux/arm64 "$IMAGE_REMOTE"
+          docker pull --platform linux/arm64 gyeongditor/story-field-be:latest
 
       # 새 이미지가 있으면 바로 교체
       - name: Deploy with compose (no pull)
