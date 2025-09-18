@@ -13,13 +13,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve dynamic paths (no hardcoding)
+      - name: Resolve variables (no hardcoding)
         run: |
+          # DEPLOY_DIR: repo variables에 있으면 사용, 없으면 $HOME/Documents
           if [ -n "${{ vars.DEPLOY_DIR }}" ]; then
             echo "DEPLOY_DIR=${{ vars.DEPLOY_DIR }}" >> "$GITHUB_ENV"
           else
             echo "DEPLOY_DIR=$HOME/Documents" >> "$GITHUB_ENV"
           fi
+
+          # IMAGE_NAME / IMAGE_TAG: vars 없으면 기본값으로 결정
+          if [ -n "${{ vars.IMAGE_NAME }}" ]; then
+            echo "IMAGE_NAME=${{ vars.IMAGE_NAME }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_NAME=gyeongditor/story-field-be" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ vars.IMAGE_TAG }}" ]; then
+            echo "IMAGE_TAG=${{ vars.IMAGE_TAG }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=latest" >> "$GITHUB_ENV"
+          fi
+
+          echo "IMAGE_REMOTE=${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
 
       - name: Quick daemon check
         run: |
@@ -34,12 +49,17 @@ jobs:
           ls -al "$DEPLOY_DIR"
           test -f "$DEPLOY_DIR/docker-compose.yml"
 
-      - name: Pull images with compose (no login; uses existing creds)
-        working-directory: ${{ env.DEPLOY_DIR }}
-        run: docker compose pull
-        timeout-minutes: 10
+      # compose pull 대신 앱 이미지 한 개만 pull
+      - name: Pre-pull app image only (linux/arm64)
+        timeout-minutes: 5
+        run: |
+          set -euxo pipefail
+          unset HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy || true
+          echo "Pulling $IMAGE_REMOTE for linux/arm64"
+          docker pull --platform linux/arm64 "$IMAGE_REMOTE"
 
-      - name: Deploy with compose
+      # 새 이미지가 있으면 바로 교체
+      - name: Deploy with compose (no pull)
         working-directory: ${{ env.DEPLOY_DIR }}
         run: docker compose up -d
 
