@@ -54,16 +54,8 @@ jobs:
 
       # 기존의 `echo "***" | docker login` 제거
       #    명시적 --config로 로그인(타임아웃 포함)
-      - name: Docker login (explicit --config)
-        timeout-minutes: 2
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          set -euxo pipefail
-          docker --config "$DOCKER_CONFIG" logout || true
-          printf '%s' "$DOCKER_PASSWORD" | docker --config "$DOCKER_CONFIG" login -u "$DOCKER_USERNAME" --password-stdin
-          sed 's/"auth":".*"/"auth":"***"/' "$DOCKER_CONFIG/config.json" || true
+      - name: Docker login
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Ensure compose files exist
         run: |
