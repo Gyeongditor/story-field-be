@@ -1,26 +1,53 @@
-name: CD - Deploy on Macmini
+name: CI - Build and Push (no build-time secrets)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/story-field-be
 
 jobs:
-  deploy:
-    runs-on: [self-hosted, macOS]   # runner 라벨 맞추기
+  build-and-push:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Docker login
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Deploy with Docker Compose
-        run: |
-          cd /Users/gyeongditor/Documents
-          docker compose pull
-          docker compose up -d
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-      - name: Check containers
-        run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+      - name: Build JAR (skip tests)
+        run: ./gradlew clean build -x test
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=ref,event=branch
+            type=sha
+
+      - name: Build & Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
