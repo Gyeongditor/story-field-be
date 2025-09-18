@@ -2,7 +2,7 @@ name: CI - Build and Push (no build-time secrets)
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "develop" ]
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/story-field-be
