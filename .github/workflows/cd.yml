@@ -13,28 +13,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 변수 해석(없으면 안전한 기본값 사용)
       - name: Resolve variables (no hardcoding)
         run: |
-          # DEPLOY_DIR: repo variables에 있으면 사용, 없으면 $HOME/Documents
+          # 배포 디렉터리
           if [ -n "${{ vars.DEPLOY_DIR }}" ]; then
             echo "DEPLOY_DIR=${{ vars.DEPLOY_DIR }}" >> "$GITHUB_ENV"
           else
             echo "DEPLOY_DIR=$HOME/Documents" >> "$GITHUB_ENV"
           fi
-
-          # IMAGE_NAME / IMAGE_TAG: vars 없으면 기본값으로 결정
-          if [ -n "${{ vars.IMAGE_NAME }}" ]; then
-            echo "IMAGE_NAME=${{ vars.IMAGE_NAME }}" >> "$GITHUB_ENV"
-          else
-            echo "IMAGE_NAME=gyeongditor/story-field-be" >> "$GITHUB_ENV"
-          fi
-          if [ -n "${{ vars.IMAGE_TAG }}" ]; then
-            echo "IMAGE_TAG=${{ vars.IMAGE_TAG }}" >> "$GITHUB_ENV"
-          else
-            echo "IMAGE_TAG=latest" >> "$GITHUB_ENV"
-          fi
-
-          echo "IMAGE_REMOTE=${IMAGE_NAME}:${IMAGE_TAG}" >> "$GITHUB_ENV"
+          # 이미지 이름/태그 (레포 Variables 없으면 기본값)
+          echo "IMAGE_NAME=${{ vars.IMAGE_NAME || 'gyeongditor/story-field-be' }}" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=${{ vars.IMAGE_TAG || 'latest' }}" >> "$GITHUB_ENV"
 
       - name: Quick daemon check
         run: |
@@ -42,36 +32,40 @@ jobs:
           docker version
           docker info
 
-      - name: Ensure compose files
+      - name: Ensure compose files exist
         run: |
           set -e
           echo "DEPLOY_DIR=$DEPLOY_DIR"
           ls -al "$DEPLOY_DIR"
           test -f "$DEPLOY_DIR/docker-compose.yml"
 
-      # 여기서 고정 이미지로 직접 pull
-      - name:
-          Sanity: tiny image pull (quick network check)
+      # 가벼운 이미지로 네트워크/레지스트리 빠른 체크
+      - name: "Tiny image pull (quick network check)"
         timeout-minutes: 2
         run: |
           set -euxo pipefail
           docker --debug pull --platform linux/arm64 alpine:3.20
 
-      - name: Pull app image (force docker.io prefix, retry, timeout)
+      # 여기서 앱 이미지만 직접 pull (재시도 포함)
+      - name: Pull app image (retry, macOS-safe)
         timeout-minutes: 5
         run: |
           set -euxo pipefail
-          img="docker.io/gyeongditor/story-field-be:latest"
+          img="docker.io/${IMAGE_NAME}:${IMAGE_TAG}"
           echo "Pulling $img (linux/arm64)"
-          # 3회 재시도 (각 20s 타임아웃) — 어디서 끊기는지 로그 남김
+          ok=0
           for i in 1 2 3; do
-            (timeout 20s docker --debug pull --platform linux/arm64 "$img") && break || {
+            if docker --debug pull --platform linux/arm64 "$img"; then
+              ok=1; break
+            else
               echo "retry #$i failed; sleeping..."
-              sleep 2
-            }
+              sleep 3
+            fi
           done
+          [ "$ok" = "1" ] || { echo "failed to pull $img after retries"; exit 1; }
+          # 최종 확인: 로컬에 이미지 존재
+          docker image inspect "$img" >/dev/null
 
-      # 새 이미지가 있으면 바로 교체
       - name: Deploy with compose (no pull)
         working-directory: ${{ env.DEPLOY_DIR }}
         run: docker compose up -d
