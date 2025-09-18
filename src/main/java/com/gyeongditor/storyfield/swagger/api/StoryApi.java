@@ -41,8 +41,8 @@ public interface StoryApi {
     ApiResponseDTO<String> saveStory(
             HttpServletRequest request,
             @RequestPart("saveStoryDTO") String saveStoryDtoString,
-            @RequestPart("thumbnail") MultipartFile thumbnail,
-            @RequestPart("pageImages") List<MultipartFile> pageImages
+            @RequestPart("thumbnail") MultipartFile thumbnailGz,
+            @RequestPart("pageImages") List<MultipartFile> pageImagesGz
     );
 
     @Operation(

@@ -19,17 +19,17 @@ public class FileErrorMapper {
     private static final Map<Class<? extends Exception>, MappedError> MAP = new LinkedHashMap<>();
 
     static {
-        // 업로드 용량 초과 등 요청 자체 문제
+        // 업로드 용량 초과 등 요청 자체 문제 → 스토리 전용 에러 코드로 변경
         MAP.put(MaxUploadSizeExceededException.class,
-                new MappedError(ErrorCode.REQ_413_001, "허용된 요청 크기를 초과했습니다."));
+                new MappedError(ErrorCode.STORY_413_001, "스토리 이미지 파일 크기가 너무 큽니다"));
 
         // 멀티파트 파싱/형식 문제 (경우에 따라 RequestErrorMapper로 보내도 됨)
         MAP.put(MultipartException.class,
-                new MappedError(ErrorCode.REQ_400_001, "잘못된 업로드 요청 형식입니다."));
+                new MappedError(ErrorCode.STORY_400_002, "압축 파일 형식이 올바르지 않습니다"));
 
-        // I/O 오류 (스트림 읽기/쓰기 실패 등)
+        // I/O 오류 (스트림 읽기/쓰기 실패 등) → 스토리 전용 에러 코드로 변경
         MAP.put(IOException.class,
-                new MappedError(ErrorCode.FILE_500_001, "파일 업로드 중 오류 발생"));
+                new MappedError(ErrorCode.STORY_500_002, "스토리 이미지 업로드 중 오류가 발생했습니다"));
 
         // S3/AWS 계열 오류 (Presign/통신/퍼미션 등)
         MAP.put(AmazonS3Exception.class,
