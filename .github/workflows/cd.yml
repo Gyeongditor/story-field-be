@@ -1,4 +1,7 @@
 # .github/workflows/cd-macmini.yml
+# 목적: 맥미니(self-hosted, macOS)에서 Docker Compose 기반 배포.
+# 전략: 1) 초경량 멀티아치 이미지로 네트워크/레지스트리/daemon 헬스체크, 2) 앱 이미지는 arm64 우선 pull, 필요 시 amd64 에뮬레이션 폴백, 3) 로컬에 풀린 이미지를 compose로 기동.
+
 name: CD - Deploy on Macmini
 
 on:
@@ -10,65 +13,95 @@ jobs:
     runs-on: [self-hosted, macOS]
 
     steps:
+      # Checkout: 워크플로 컨텍스트에 리포지토리 코드를 가져옵니다.
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 변수 해석(없으면 안전한 기본값 사용)
+      # Resolve variables (no hardcoding): 런타임 변수들을 환경변수로 주입하고, 미설정 시 안전한 기본값을 제공합니다.
       - name: Resolve variables (no hardcoding)
+        shell: bash
         run: |
-          # 배포 디렉터리
+          set -euxo pipefail
           if [ -n "${{ vars.DEPLOY_DIR }}" ]; then
             echo "DEPLOY_DIR=${{ vars.DEPLOY_DIR }}" >> "$GITHUB_ENV"
           else
             echo "DEPLOY_DIR=$HOME/Documents" >> "$GITHUB_ENV"
           fi
-          # 이미지 이름/태그 (레포 Variables 없으면 기본값)
           echo "IMAGE_NAME=${{ vars.IMAGE_NAME || 'gyeongditor/story-field-be' }}" >> "$GITHUB_ENV"
           echo "IMAGE_TAG=${{ vars.IMAGE_TAG || 'latest' }}" >> "$GITHUB_ENV"
+          # arm64 매니페스트가 없을 때 amd64 에뮬레이션으로 폴백할지 여부
+          echo "ALLOW_AMD64_FALLBACK=${{ vars.ALLOW_AMD64_FALLBACK || 'true' }}" >> "$GITHUB_ENV"
 
+      # Quick daemon check: Docker daemon이 정상이며 레지스트리 접근이 가능한지 기본 정보를 확인합니다.
       - name: Quick daemon check
+        shell: bash
         run: |
-          set -e
+          set -euxo pipefail
           docker version
           docker info
 
+      # Ensure compose files exist: 배포 디렉터리와 필수 compose 파일 존재 여부를 확인합니다.
       - name: Ensure compose files exist
+        shell: bash
         run: |
-          set -e
+          set -euxo pipefail
           echo "DEPLOY_DIR=$DEPLOY_DIR"
           ls -al "$DEPLOY_DIR"
           test -f "$DEPLOY_DIR/docker-compose.yml"
 
-      # 가벼운 이미지로 네트워크/레지스트리 빠른 체크
-      - name: "Tiny image pull (quick network check)"
+      # Tiny image pull (quick network/registry health): hello-world(멀티아치)로 네트워크/레지스트리/캐시 동작을 빠르게 점검합니다.
+      - name: Tiny image pull (quick network/registry health)
         timeout-minutes: 2
+        shell: bash
         run: |
           set -euxo pipefail
-          docker pull --platform linux/amd64 docker.io/gyeongditor/story-field-be:latest
+          docker pull hello-world:latest
+          # 필요 시 실제 실행까지 검증: docker run --rm hello-world
 
-      # 여기서 앱 이미지만 직접 pull (재시도 포함)
-      - name: Pull app image (retry, macOS-safe)
-        timeout-minutes: 5
+      # Pull app image (arm64 first, optional amd64 fallback): 앱 이미지를 arm64로 우선 풀고, 실패 시 옵션에 따라 amd64로 폴백합니다.
+      - name: Pull app image (arm64 first, optional amd64 fallback)
+        timeout-minutes: 6
+        shell: bash
         run: |
           set -euxo pipefail
           img="docker.io/${IMAGE_NAME}:${IMAGE_TAG}"
-          echo "Pulling $img (linux/arm64)"
+          echo "Trying to pull $img for linux/arm64"
           ok=0
           for i in 1 2 3; do
             if docker --debug pull --platform linux/arm64 "$img"; then
               ok=1; break
             else
-              echo "retry #$i failed; sleeping..."
+              echo "arm64 retry #$i failed; sleeping..."
               sleep 3
             fi
           done
+
+          if [ "$ok" = "0" ] && [ "${ALLOW_AMD64_FALLBACK}" = "true" ]; then
+            echo "arm64 manifest not available. Falling back to linux/amd64 (emulation on macOS)..."
+            for i in 1 2 3; do
+              if docker --debug pull --platform linux/amd64 "$img"; then
+                ok=1; break
+              else
+                echo "amd64 retry #$i failed; sleeping..."
+                sleep 3
+              fi
+            done
+          fi
+
           [ "$ok" = "1" ] || { echo "failed to pull $img after retries"; exit 1; }
-          # 최종 확인: 로컬에 이미지 존재
           docker image inspect "$img" >/dev/null
 
+      # Deploy with compose (no pull): 사전 pull된 이미지를 사용해 Compose로 기동합니다.
       - name: Deploy with compose (no pull)
         working-directory: ${{ env.DEPLOY_DIR }}
-        run: docker compose up -d
+        shell: bash
+        run: |
+          set -euxo pipefail
+          docker compose up -d
 
+      # Check containers: 실행 중 컨테이너 상태를 테이블 형태로 출력합니다.
       - name: Check containers
-        run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+        shell: bash
+        run: |
+          set -e
+          docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
