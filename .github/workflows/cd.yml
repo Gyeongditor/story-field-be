@@ -50,13 +50,26 @@ jobs:
           test -f "$DEPLOY_DIR/docker-compose.yml"
 
       # 여기서 고정 이미지로 직접 pull
-      - name: Pull app image (fixed ref)
+      - name:
+          Sanity: tiny image pull (quick network check)
+        timeout-minutes: 2
+        run: |
+          set -euxo pipefail
+          docker --debug pull --platform linux/arm64 alpine:3.20
+
+      - name: Pull app image (force docker.io prefix, retry, timeout)
         timeout-minutes: 5
         run: |
           set -euxo pipefail
-          # 프록시 환경이면 잠깐 해제(느림 방지)
-          unset HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy || true
-          docker pull --platform linux/arm64 gyeongditor/story-field-be:latest
+          img="docker.io/gyeongditor/story-field-be:latest"
+          echo "Pulling $img (linux/arm64)"
+          # 3회 재시도 (각 20s 타임아웃) — 어디서 끊기는지 로그 남김
+          for i in 1 2 3; do
+            (timeout 20s docker --debug pull --platform linux/arm64 "$img") && break || {
+              echo "retry #$i failed; sleeping..."
+              sleep 2
+            }
+          done
 
       # 새 이미지가 있으면 바로 교체
       - name: Deploy with compose (no pull)
