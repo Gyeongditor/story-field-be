@@ -7,12 +7,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, macmini]
+    runs-on: [self-hosted, macOS]  # 필요시 [self-hosted, macOS, ARM64]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 하드코딩 제거: 레포 Variables 사용, 없으면 기본값으로 설정
       - name: Resolve dynamic paths (no hardcoding)
         run: |
           if [ -n "${{ vars.DEPLOY_DIR }}" ]; then
@@ -20,50 +21,52 @@ jobs:
           else
             echo "DEPLOY_DIR=$HOME/Documents" >> "$GITHUB_ENV"
           fi
+          # DOCKER_CONFIG는 러너 임시 디렉터리 기본값 사용(키체인 우회용)
           if [ -n "${{ vars.DOCKER_CONFIG }}" ]; then
             echo "DOCKER_CONFIG=${{ vars.DOCKER_CONFIG }}" >> "$GITHUB_ENV"
           else
             echo "DOCKER_CONFIG=$RUNNER_TEMP/.docker" >> "$GITHUB_ENV"
           fi
 
-      - name: Show resolved paths
-        run: |
-          echo "DEPLOY_DIR=$DEPLOY_DIR"
-          echo "DOCKER_CONFIG=$DOCKER_CONFIG"
-
       - name: Quick daemon & context check
         run: |
-          set -euxo pipefail
+          set -e
           docker version
           docker info
           docker context ls
 
-      # Keychain 우회: 잡 전용 docker config 생성 + credsStore 비활성화
+      # Keychain 우회: 잡 전용 Docker config 생성 후 credsStore 비활성화
       - name: Prepare per-job Docker config (bypass Keychain)
         run: |
-          set -euxo pipefail
+          set -e
           mkdir -p "$DOCKER_CONFIG"
-          printf '%s\n' '{"auths": {}, "credsStore": ""}' > "$DOCKER_CONFIG/config.json"
+          echo '{"auths": {}, "credsStore": ""}' > "$DOCKER_CONFIG/config.json"
+          echo "Using DOCKER_CONFIG=$DOCKER_CONFIG"
           cat "$DOCKER_CONFIG/config.json"
 
-      # 네트워크 확인(느리면 여기서 보임)
-      - name: Network sanity check to Docker Hub
-        run: |
-          set -euxo pipefail
-          curl -I --max-time 10 https://registry-1.docker.io/v2/ || true
+      # 네트워크/레지스트리 접근 미리 점검(지연 원인 가시화)
+      - name: Registry reachability sanity check
+        run: curl -I --max-time 10 https://registry-1.docker.io/v2/ || true
 
-      # 기존의 `echo "***" | docker login` 제거
-      #    명시적 --config로 로그인(타임아웃 포함)
+      # CI와 동일한 액션 사용하되, DOCKER_CONFIG를 명시적으로 전달
       - name: Docker login
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        timeout-minutes: 3
+        env:
+          DOCKER_CONFIG: ${{ env.DOCKER_CONFIG }}
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # 배포 전 경로/파일 검증
       - name: Ensure compose files exist
         run: |
-          set -euxo pipefail
+          set -e
+          echo "DEPLOY_DIR=$DEPLOY_DIR"
           ls -al "$DEPLOY_DIR"
-          test -f "$DEPLOY_DIR/docker-compose.yml"
+          test -f "$DEPLOY_DIR/docker-compose.yml" || (echo "docker-compose.yml not found"; exit 1)
 
-      # compose에도 동일한 --config 사용(일관성)
+      # compose에도 동일한 DOCKER_CONFIG를 적용(일관성)
       - name: Pull images with compose
         working-directory: ${{ env.DEPLOY_DIR }}
         run: docker --config "$DOCKER_CONFIG" compose pull
