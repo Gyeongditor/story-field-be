@@ -44,7 +44,7 @@ jobs:
         timeout-minutes: 2
         run: |
           set -euxo pipefail
-          docker --debug pull --platform linux/arm64 alpine:3.20
+          docker pull --platform linux/amd64 docker.io/gyeongditor/story-field-be:latest
 
       # 여기서 앱 이미지만 직접 pull (재시도 포함)
       - name: Pull app image (retry, macOS-safe)
