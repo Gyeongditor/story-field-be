@@ -7,13 +7,12 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, macOS]  # 필요시 [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 하드코딩 제거: 레포 Variables 사용, 없으면 기본값으로 설정
       - name: Resolve dynamic paths (no hardcoding)
         run: |
           if [ -n "${{ vars.DEPLOY_DIR }}" ]; then
@@ -21,60 +20,28 @@ jobs:
           else
             echo "DEPLOY_DIR=$HOME/Documents" >> "$GITHUB_ENV"
           fi
-          # DOCKER_CONFIG는 러너 임시 디렉터리 기본값 사용(키체인 우회용)
-          if [ -n "${{ vars.DOCKER_CONFIG }}" ]; then
-            echo "DOCKER_CONFIG=${{ vars.DOCKER_CONFIG }}" >> "$GITHUB_ENV"
-          else
-            echo "DOCKER_CONFIG=$RUNNER_TEMP/.docker" >> "$GITHUB_ENV"
-          fi
 
-      - name: Quick daemon & context check
+      - name: Quick daemon check
         run: |
           set -e
           docker version
           docker info
-          docker context ls
 
-      # Keychain 우회: 잡 전용 Docker config 생성 후 credsStore 비활성화
-      - name: Prepare per-job Docker config (bypass Keychain)
-        run: |
-          set -e
-          mkdir -p "$DOCKER_CONFIG"
-          echo '{"auths": {}, "credsStore": ""}' > "$DOCKER_CONFIG/config.json"
-          echo "Using DOCKER_CONFIG=$DOCKER_CONFIG"
-          cat "$DOCKER_CONFIG/config.json"
-
-      # 네트워크/레지스트리 접근 미리 점검(지연 원인 가시화)
-      - name: Registry reachability sanity check
-        run: curl -I --max-time 10 https://registry-1.docker.io/v2/ || true
-
-      # CI와 동일한 액션 사용하되, DOCKER_CONFIG를 명시적으로 전달
-      - name: Docker login
-        uses: docker/login-action@v3
-        timeout-minutes: 3
-        env:
-          DOCKER_CONFIG: ${{ env.DOCKER_CONFIG }}
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # 배포 전 경로/파일 검증
-      - name: Ensure compose files exist
+      - name: Ensure compose files
         run: |
           set -e
           echo "DEPLOY_DIR=$DEPLOY_DIR"
           ls -al "$DEPLOY_DIR"
-          test -f "$DEPLOY_DIR/docker-compose.yml" || (echo "docker-compose.yml not found"; exit 1)
+          test -f "$DEPLOY_DIR/docker-compose.yml"
 
-      # compose에도 동일한 DOCKER_CONFIG를 적용(일관성)
-      - name: Pull images with compose
+      - name: Pull images with compose (no login; uses existing creds)
         working-directory: ${{ env.DEPLOY_DIR }}
-        run: docker --config "$DOCKER_CONFIG" compose pull
+        run: docker compose pull
         timeout-minutes: 10
 
       - name: Deploy with compose
         working-directory: ${{ env.DEPLOY_DIR }}
-        run: docker --config "$DOCKER_CONFIG" compose up -d
+        run: docker compose up -d
 
       - name: Check containers
-        run: docker --config "$DOCKER_CONFIG" ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+        run: docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
