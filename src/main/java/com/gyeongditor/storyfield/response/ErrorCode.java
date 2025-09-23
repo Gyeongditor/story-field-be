@@ -70,8 +70,16 @@ public enum ErrorCode {
 
     // 8. 스토리/파일 관련
     STORY_400_001(HttpStatus.BAD_REQUEST, "STORY_400_001", "스토리 요청 데이터가 잘못되었습니다."),
+    STORY_400_002(HttpStatus.BAD_REQUEST, "STORY_400_002", "압축 파일 해제에 실패했습니다."),
+    STORY_400_003(HttpStatus.BAD_REQUEST, "STORY_400_003", "이미지 파일 형식이 올바르지 않습니다."),
+    STORY_400_004(HttpStatus.BAD_REQUEST, "STORY_400_004", "페이지 수와 이미지 파일 수가 일치하지 않습니다."),
     STORY_404_001(HttpStatus.NOT_FOUND, "STORY_404_001", "스토리를 찾을 수 없습니다."),
     STORY_403_001(HttpStatus.FORBIDDEN, "STORY_403_001", "본인 스토리만 수정/삭제할 수 있습니다."),
+    STORY_413_001(HttpStatus.PAYLOAD_TOO_LARGE, "STORY_413_001", "스토리 이미지 파일 크기가 너무 큽니다."),
+    STORY_500_001(HttpStatus.INTERNAL_SERVER_ERROR, "STORY_500_001", "썸네일 업로드 중 오류가 발생했습니다."),
+    STORY_500_002(HttpStatus.INTERNAL_SERVER_ERROR, "STORY_500_002", "스토리 페이지 이미지 업로드 중 오류가 발생했습니다."),
+    STORY_500_003(HttpStatus.INTERNAL_SERVER_ERROR, "STORY_500_003", "스토리 데이터 저장 중 오류가 발생했습니다."),
+    STORY_500_004(HttpStatus.INTERNAL_SERVER_ERROR, "STORY_500_004", "이미지 파일 접근 권한이 없습니다."),
     FILE_400_001(HttpStatus.BAD_REQUEST, "FILE_400_001", "파일이 비어 있습니다."),
     FILE_400_002(HttpStatus.BAD_REQUEST, "FILE_400_002", "허용되지 않은 파일 형식입니다."),
     FILE_413_002(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_413_002", "허용된 파일 크기를 초과했습니다."),

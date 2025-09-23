@@ -25,9 +25,9 @@ public class StoryController implements StoryApi {
     @Override
     public ApiResponseDTO<String> saveStory(HttpServletRequest request,
                                             String saveStoryDtoString,
-                                            MultipartFile thumbnail,
-                                            List<MultipartFile> pageImages) {
-        return storyService.saveStoryFromFastApi(request,saveStoryDtoString, thumbnail, pageImages);
+                                            MultipartFile thumbnailGz,
+                                            List<MultipartFile> pageImagesGz) {
+        return storyService.saveStoryFromFastApi(request,saveStoryDtoString, thumbnailGz, pageImagesGz);
     }
     @Override
     public ApiResponseDTO<List<StoryPageResponseDTO>> getStoryPages(HttpServletRequest request, UUID storyId) {
