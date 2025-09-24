@@ -11,7 +11,7 @@ import com.gyeongditor.storyfield.repository.StoryRepository;
 import com.gyeongditor.storyfield.response.ErrorCode;
 import com.gyeongditor.storyfield.response.SuccessCode;
 import com.gyeongditor.storyfield.service.StoryPersistenceService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
