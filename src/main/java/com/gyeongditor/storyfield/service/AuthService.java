@@ -17,4 +17,6 @@ public interface AuthService {
     ApiResponseDTO<Map<String, String>> reissueAccessToken(HttpServletRequest request, HttpServletResponse response);
 
     String extractAccessToken(HttpServletRequest request);
+
+    public ApiResponseDTO<Boolean> verifyToken(String authorizationHeader);
 }
