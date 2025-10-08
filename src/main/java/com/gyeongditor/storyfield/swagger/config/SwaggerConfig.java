@@ -23,7 +23,7 @@ import java.util.List;
 
 @OpenAPIDefinition(servers = {
         @Server(url = "http://localhost:9080", description = "Local"),
-        @Server(url = "http://100.73.50.93/api", description = "Dev (Nginx Proxy)"),
+        @Server(url = "http://100.73.50.93", description = "Dev (Nginx Proxy)"),
         @Server(url = "https://api.storyfield.dev", description = "Prod")
 })
 @Configuration
