@@ -57,7 +57,9 @@ public class SecurityConfig {
                                 "/swagger-ui/index.html",
                                 "/v3/api-docs",
                                 "/v3/api-docs/**",
-                                "/stories/save").permitAll()
+                                "/stories/save",
+                                "/api/swagger-ui/**",
+                                "/api/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
