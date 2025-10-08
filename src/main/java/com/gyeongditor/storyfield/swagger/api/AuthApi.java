@@ -77,4 +77,21 @@ public interface AuthApi {
             HttpServletRequest request,
             HttpServletResponse response
     );
+
+    @Operation(
+            summary = "토큰 검증",
+            description = "AccessToken의 유효 여부를 Boolean 값으로 반환합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
+    @ApiSuccessResponse(
+            SuccessCode.AUTH_200_008 // 신규 SuccessCode 추가 필요
+    )
+    @ApiErrorResponse({
+            ErrorCode.AUTH_401_003, // 토큰 없음
+            ErrorCode.AUTH_401_004  // 토큰 유효하지 않음
+    })
+    @PostMapping("/verify")
+    ApiResponseDTO<Boolean> verifyToken(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    );
 }
