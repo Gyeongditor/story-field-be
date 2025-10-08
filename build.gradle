@@ -89,3 +89,4 @@ tasks.named('bootJar') {
     // Swagger UI 정적 리소스 누락 방지
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
