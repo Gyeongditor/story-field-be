@@ -32,4 +32,8 @@ public class AuthController implements AuthApi {
     public ApiResponseDTO<Map<String, String>> reissueAccessToken(HttpServletRequest request, HttpServletResponse response) {
         return authService.reissueAccessToken(request, response);
     }
+    @Override
+    public ApiResponseDTO<Boolean> verifyToken(String authorizationHeader) {
+        return authService.verifyToken(authorizationHeader);
+    }
 }

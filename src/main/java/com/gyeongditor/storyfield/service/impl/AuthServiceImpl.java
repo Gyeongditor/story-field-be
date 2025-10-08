@@ -113,17 +113,17 @@ public class AuthServiceImpl implements AuthService {
 
     // 내부 유틸
 
-    private String extractToken(String bearerToken) {
-        if (bearerToken == null || bearerToken.isBlank()) {
+    private String extractToken(String authorizationHeader) {
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
             throw new CustomException(ErrorCode.AUTH_401_010, "Authorization 헤더가 비어있습니다.");
         }
-        if (bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        if (authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7);
         }
-        if (bearerToken.trim().isEmpty()) {
+        if (authorizationHeader.trim().isEmpty()) {
             throw new CustomException(ErrorCode.AUTH_401_003, "토큰이 비어있습니다.");
         }
-        return bearerToken;
+        return authorizationHeader;
     }
 
     private String extractRefreshTokenFromCookie(HttpServletRequest request) {
@@ -181,5 +181,17 @@ public class AuthServiceImpl implements AuthService {
     private void addAccessTokenHeaders(HttpServletResponse response, String accessToken, String uuid) {
         response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         response.addHeader("userUUID", uuid);
+    }
+
+    @Override
+    public ApiResponseDTO<Boolean> verifyToken(String authorizationHeader) {
+        // 1. Authorization 헤더에서 Bearer 토큰만 추출
+        String token = extractToken(authorizationHeader);
+
+        // 2. JwtTokenProvider 검증 (유효하지 않으면 CustomException 발생 → GlobalExceptionHandler 처리)
+        jwtTokenProvider.validateOrThrow(token);
+
+        // 3. 여기까지 오면 토큰이 유효한 것 → true 반환
+        return ApiResponseDTO.success(SuccessCode.AUTH_200_008, true);
     }
 }
