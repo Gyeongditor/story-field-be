@@ -64,7 +64,7 @@ public class S3ServiceImpl implements S3Service {
                                 awsProperties.getSecretKey()
                         ))).build();
 
-        Date expiration = new Date(System.currentTimeMillis() + 600 * 1000);
+        Date expiration = new Date(System.currentTimeMillis() + 30 * 60 * 1000);
         String presignedUrl = s3Client.generatePresignedUrl(awsProperties.getBucket(), fileName, expiration).toString();
 
         return ApiResponseDTO.success(SuccessCode.FILE_200_002, presignedUrl);
