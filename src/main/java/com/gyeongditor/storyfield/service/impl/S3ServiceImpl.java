@@ -87,6 +87,40 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
+    public ApiResponseDTO<List<String>> uploadImageFile(List<MultipartFile> files, HttpServletRequest request) {
+        String accessToken = authService.extractAccessToken(request); // 이미 사용 중인 패턴
+        jwtTokenProvider.validateOrThrow(accessToken);
+
+        if (files == null || files.isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_400_001);
+        }
+
+        List<String> keys = new ArrayList<>();
+        for (MultipartFile file : files) {
+            validateImageFile(file);
+            String key = "story-images/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+            try {
+                upload(file, key); // 기존 private upload 재사용. 내부에서 IOException을 래핑하거나 여기서 catch.
+                keys.add(key);
+            } catch (IOException e) {
+                throw new CustomException(ErrorCode.FILE_500_001);
+            }
+        }
+
+        return ApiResponseDTO.success(SuccessCode.FILE_200_001, keys);
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) throw new CustomException(ErrorCode.FILE_400_001);
+        if (file.getSize() > 10 * 1024 * 1024) throw new CustomException(ErrorCode.FILE_413_002);
+        String ct = file.getContentType();
+        String name = file.getOriginalFilename();
+        boolean okType = ct != null && (ct.equals("image/jpeg") || ct.equals("image/png") || ct.equals("image/webp"));
+        boolean okExt = name != null && name.toLowerCase().matches(".*\\.(jpg|jpeg|png|webp)$");
+        if (!okType && !okExt) throw new CustomException(ErrorCode.STORY_400_003);
+    }
+
+    @Override
     public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
         jwtTokenProvider.validateOrThrow(accessToken);
 
