@@ -98,7 +98,7 @@ public class S3ServiceImpl implements S3Service {
         List<String> keys = new ArrayList<>();
         for (MultipartFile file : files) {
             validateImageFile(file);
-            String key = "story-images/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
             try {
                 upload(file, key); // 기존 private upload 재사용. 내부에서 IOException을 래핑하거나 여기서 catch.
                 keys.add(key);
