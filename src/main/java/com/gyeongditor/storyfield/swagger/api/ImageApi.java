@@ -10,11 +10,37 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Tag(name = "Image", description = "이미지")
 @RequestMapping("/images")
 public interface ImageApi {
+
+    @Operation(
+            summary = "이미지 업로드",
+            description = "S3에 이미지를 업로드 합니다.",
+            security = {@SecurityRequirement(name = "bearerAuth")}
+    )
+    @ApiSuccessResponse(
+            SuccessCode.FILE_200_001
+    )
+    @ApiErrorResponse({
+            ErrorCode.AUTH_401_012, // 유효하지 않은 인증 토큰
+            ErrorCode.STORY_400_003, // 이미지 파일 형식이 올바르지 않습니다.
+            ErrorCode.FILE_400_001, // 파일이 비어있음.
+            ErrorCode.FILE_413_002 // 허용된 파일 크기 초과.
+    })
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ApiResponseDTO<List<String>> uploadImageFile(
+            @Parameter(description = "업로드할 이미지 파일들", required = true)
+            @RequestPart("files") List<MultipartFile> files,
+            @Parameter(description = "Bearer AccessToken", required = true)
+            HttpServletRequest request
+    );
 
     @Operation(
             summary = "이미지 URL 조회",
