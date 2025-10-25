@@ -138,30 +138,33 @@ public class S3ServiceImpl implements S3Service {
             throw new CustomException(ErrorCode.FILE_413_002, "파일 크기가 너무 큽니다");
         }
 
-        try (InputStream in = gzFile.getInputStream();
-             GZIPInputStream gzin = new GZIPInputStream(in);
-             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            gzin.transferTo(bos);
-            return bos.toByteArray();
+        try (GZIPInputStream gis = new GZIPInputStream(gzFile.getInputStream());
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = gis.read(buffer)) != -1) {
+                baos.write(buffer, 0, len);
+            }
+            return baos.toByteArray();
         } catch (IOException e) {
             String fileName = safeName(gzFile.getOriginalFilename());
 
             // GZIP 형식 오류
-            if (e.getMessage().contains("Not in GZIP format") ||
+            if (e.getMessage() != null && (e.getMessage().contains("Not in GZIP format") ||
                 e.getMessage().contains("invalid header") ||
-                e.getMessage().contains("incorrect header check")) {
+                e.getMessage().contains("incorrect header check"))) {
                 throw new CustomException(ErrorCode.STORY_400_002,
                     "GZIP 압축 형식이 아닙니다: " + fileName);
             }
 
             // 파일 접근 권한 문제
-            if (e.getMessage().contains("Access denied") ||
-                e.getMessage().contains("Permission denied")) {
+            if (e.getMessage() != null && (e.getMessage().contains("Access denied") ||
+                e.getMessage().contains("Permission denied"))) {
                 throw new CustomException(ErrorCode.STORY_500_004,
                     "파일 접근 권한이 없습니다");
             }
 
-            // 일반적인 GZIP 해제 실패
+            // 일반적인 GZIP 해제 실패 (EOFException 등 포함)
             throw new CustomException(ErrorCode.STORY_400_002,
                     "압축 파일 해제에 실패했습니다: " + fileName);
         }
