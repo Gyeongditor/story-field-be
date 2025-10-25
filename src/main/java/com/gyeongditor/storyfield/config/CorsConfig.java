@@ -33,8 +33,8 @@ public class CorsConfig {
         config.setMaxAge(props.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // RN 전용 엔드포인트에만 CORS 적용
-        source.registerCorsConfiguration("/api/**", config);
+        // 모든 엔드포인트에 CORS 적용 (FastAPI, React Native 등)
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 

@@ -117,7 +117,8 @@ public class S3ServiceImpl implements S3Service {
         String name = file.getOriginalFilename();
         boolean okType = ct != null && (ct.equals("image/jpeg") || ct.equals("image/png") || ct.equals("image/webp"));
         boolean okExt = name != null && name.toLowerCase().matches(".*\\.(jpg|jpeg|png|webp)$");
-        if (!okType && !okExt) throw new CustomException(ErrorCode.STORY_400_003);
+        // Content-Type이나 확장자 중 하나라도 유효하지 않으면 예외 발생
+        if (!(okType || okExt)) throw new CustomException(ErrorCode.STORY_400_003);
     }
 
     @Override
@@ -152,18 +153,9 @@ public class S3ServiceImpl implements S3Service {
 
         try {
             String fileName = "audio/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(file.getSize());
-            metadata.setContentType(file.getContentType());
-
-            amazonS3.putObject(awsProperties.getBucket(), fileName, file.getInputStream(), metadata);
-
+            upload(file, fileName);
             return ApiResponseDTO.success(SuccessCode.AUDIO_200_001, getFileUrl(fileName));
-
         } catch (IOException e) {
-            throw new CustomException(ErrorCode.AUDIO_500_001);
-        } catch (Exception e) {
             throw new CustomException(ErrorCode.AUDIO_500_001);
         }
     }
@@ -277,7 +269,7 @@ public class S3ServiceImpl implements S3Service {
     }
 
     private void validateAudioFile(MultipartFile file) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new CustomException(ErrorCode.AUDIO_400_001);
         }
 
@@ -296,7 +288,8 @@ public class S3ServiceImpl implements S3Service {
         boolean validMimeType = contentType != null && ALLOWED_AUDIO_TYPES.contains(contentType);
         boolean validExtension = !fileExtension.isEmpty() && ALLOWED_AUDIO_EXTENSIONS.contains(fileExtension);
 
-        if (!validMimeType && !validExtension) {
+        // Content-Type이나 확장자 중 하나라도 유효하지 않으면 예외 발생
+        if (!(validMimeType || validExtension)) {
             throw new CustomException(ErrorCode.AUDIO_400_002);
         }
     }
