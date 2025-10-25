@@ -11,11 +11,7 @@ public interface S3Service {
 
     ApiResponseDTO<String> generatePresignedUrl(String fileName, String accessToken);
 
-    List<String> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException;
-
     ApiResponseDTO<List<String>> uploadImageFile(List<MultipartFile> files, HttpServletRequest request);
-
-    String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException;
 
     ApiResponseDTO<String> uploadAudioFile(MultipartFile file, String accessToken);
 

@@ -23,11 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -71,24 +74,8 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
-    public List<String> uploadFiles(List<MultipartFile> files, String accessToken) throws IOException {
-        jwtTokenProvider.validateOrThrow(accessToken);
-
-        List<String> uploadedFileNames = new ArrayList<>();
-        for (MultipartFile file : files) {
-            if (file != null && !file.isEmpty()) {
-                String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                upload(file, fileName);
-                uploadedFileNames.add(fileName);
-            }
-        }
-
-        return uploadedFileNames;
-    }
-
-    @Override
     public ApiResponseDTO<List<String>> uploadImageFile(List<MultipartFile> files, HttpServletRequest request) {
-        String accessToken = authService.extractAccessToken(request); // 이미 사용 중인 패턴
+        String accessToken = authService.extractAccessToken(request);
         jwtTokenProvider.validateOrThrow(accessToken);
 
         if (files == null || files.isEmpty()) {
@@ -98,9 +85,24 @@ public class S3ServiceImpl implements S3Service {
         List<String> keys = new ArrayList<>();
         for (MultipartFile file : files) {
             validateImageFile(file);
-            String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            String originalName = file.getOriginalFilename();
+            boolean isGzFile = originalName != null && originalName.toLowerCase().endsWith(".gz");
+
             try {
-                upload(file, key); // 기존 private upload 재사용. 내부에서 IOException을 래핑하거나 여기서 catch.
+                String key;
+                if (isGzFile) {
+                    // .gz 파일: 압축 해제 후 PNG로 업로드
+                    byte[] pngBytes = gunzipToBytes(file);
+                    String baseName = stripGzExtension(safeName(originalName));
+                    String pngName = ensurePngExtension(baseName);
+                    key = UUID.randomUUID() + "_" + pngName;
+                    uploadBytes(pngBytes, key, "image/png");
+                } else {
+                    // 일반 이미지: 그대로 업로드
+                    key = UUID.randomUUID() + "_" + originalName;
+                    upload(file, key);
+                }
                 keys.add(key);
             } catch (IOException e) {
                 throw new CustomException(ErrorCode.FILE_500_001);
@@ -115,21 +117,76 @@ public class S3ServiceImpl implements S3Service {
         if (file.getSize() > 10 * 1024 * 1024) throw new CustomException(ErrorCode.FILE_413_002);
         String ct = file.getContentType();
         String name = file.getOriginalFilename();
-        boolean okType = ct != null && (ct.equals("image/jpeg") || ct.equals("image/png") || ct.equals("image/webp"));
-        boolean okExt = name != null && name.toLowerCase().matches(".*\\.(jpg|jpeg|png|webp)$");
+
+        // .gz 파일은 압축된 이미지로 간주하여 허용
+        boolean isGzFile = name != null && name.toLowerCase().endsWith(".gz");
+
+        boolean okType = ct != null && (ct.equals("image/jpeg") || ct.equals("image/png") || ct.equals("image/webp") || ct.equals("application/gzip") || ct.equals("application/x-gzip"));
+        boolean okExt = name != null && name.toLowerCase().matches(".*\\.(jpg|jpeg|png|webp|gz)$");
+
         // Content-Type이나 확장자 중 하나라도 유효하지 않으면 예외 발생
         if (!(okType || okExt)) throw new CustomException(ErrorCode.STORY_400_003);
     }
 
-    @Override
-    public String uploadThumbnailFile(MultipartFile file, String accessToken) throws IOException {
-        jwtTokenProvider.validateOrThrow(accessToken);
+    private byte[] gunzipToBytes(MultipartFile gzFile) {
+        if (gzFile == null || gzFile.isEmpty()) {
+            throw new CustomException(ErrorCode.FILE_400_001, "빈 파일입니다");
+        }
 
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        // 파일 크기 체크 (10MB 제한)
+        if (gzFile.getSize() > 10 * 1024 * 1024) {
+            throw new CustomException(ErrorCode.FILE_413_002, "파일 크기가 너무 큽니다");
+        }
 
-        upload(file, fileName);
+        try (InputStream in = gzFile.getInputStream();
+             GZIPInputStream gzin = new GZIPInputStream(in);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            gzin.transferTo(bos);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            String fileName = safeName(gzFile.getOriginalFilename());
 
-        return fileName;
+            // GZIP 형식 오류
+            if (e.getMessage().contains("Not in GZIP format") ||
+                e.getMessage().contains("invalid header") ||
+                e.getMessage().contains("incorrect header check")) {
+                throw new CustomException(ErrorCode.STORY_400_002,
+                    "GZIP 압축 형식이 아닙니다: " + fileName);
+            }
+
+            // 파일 접근 권한 문제
+            if (e.getMessage().contains("Access denied") ||
+                e.getMessage().contains("Permission denied")) {
+                throw new CustomException(ErrorCode.STORY_500_004,
+                    "파일 접근 권한이 없습니다");
+            }
+
+            // 일반적인 GZIP 해제 실패
+            throw new CustomException(ErrorCode.STORY_400_002,
+                    "압축 파일 해제에 실패했습니다: " + fileName);
+        }
+    }
+
+    private static String safeName(final String name) {
+        if (name == null || name.isBlank()) {
+            return "file.png";
+        }
+        return Paths.get(name).getFileName().toString();
+    }
+
+    private static String stripGzExtension(final String name) {
+        if (name.toLowerCase(Locale.ROOT).endsWith(".gz")) {
+            return name.substring(0, name.length() - 3);
+        }
+        return name;
+    }
+
+    private static String ensurePngExtension(final String name) {
+        final String lower = name.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".png")) {
+            return name;
+        }
+        return name + ".png";
     }
 
     private void upload(MultipartFile file, String fileName) throws IOException {
