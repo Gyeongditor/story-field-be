@@ -9,6 +9,8 @@ services:
       - "4306:3306"
     env_file:
       - ./.env
+    networks:
+      - storyfield-app
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -21,24 +23,17 @@ services:
     restart: unless-stopped
     ports:
       - "8379:6379"
-
-  fastapi:
-    image: gyeongditorai/story-field-ai:latest
-    container_name: storyfield-fastapi
-    restart: unless-stopped
-    ports:
-      - "8001:8000"
-    env_file:
-      - ./.env
-
+    networks:
+      - storyfield-app
   app:
     image: gyeongditor/story-field-be:latest
     container_name: storyfield-app
     depends_on:
       - mariadb
       - redis
-      - fastapi
     restart: unless-stopped
+    networks:
+      - storyfield-app
     ports:
       - "9080:8080"
     env_file:
@@ -57,13 +52,11 @@ services:
           sleep 1
         done
         echo "✅ MariaDB OK"
-        echo "🔎 checking FastAPI at fastapi:8000"
-        until nc -z fastapi 8000; do
-          echo "⏳ waiting for FastAPI..."
-          sleep 1
-        done
-        echo "✅ FastAPI OK"
         exec java -jar /app/app.jar
 
 volumes:
   mariadb_data:
+
+networks:
+  storyfield-app:
+    driver: bridge
